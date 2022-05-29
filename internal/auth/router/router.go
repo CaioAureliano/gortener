@@ -6,16 +6,16 @@ import (
 )
 
 type AuthRouter struct {
-	authHandler *handler.AuthHandler
-	userHandler *handler.UserHandler
 }
 
-func NewAuthRouter(a *handler.AuthHandler, u *handler.UserHandler) *AuthRouter {
-	return &AuthRouter{
-		authHandler: a,
-		userHandler: u,
-	}
+func NewAuthRouter() *AuthRouter {
+	return &AuthRouter{}
 }
+
+var (
+	authHandler = handler.NewAuthHandler()
+	userHandler = handler.NewUserHandler()
+)
 
 const (
 	AUTH_ENDPOINT  = "/login"
@@ -23,7 +23,7 @@ const (
 )
 
 func (r *AuthRouter) Router(e *echo.Echo) {
-	e.POST(AUTH_ENDPOINT, r.authHandler.Authenticate)
+	e.POST(AUTH_ENDPOINT, authHandler.Authenticate)
 
-	e.POST(USERS_ENDPOINT, r.userHandler.Create)
+	e.POST(USERS_ENDPOINT, userHandler.Create)
 }

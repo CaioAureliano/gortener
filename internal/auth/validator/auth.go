@@ -11,19 +11,19 @@ import (
 )
 
 type AuthValidator struct {
-	validator   *validator.Validate
-	userService *service.UserService
+	validator *validator.Validate
 }
 
-func NewAuthValidator(u *service.UserService) *AuthValidator {
+func NewAuthValidator() *AuthValidator {
 	return &AuthValidator{
-		validator:   validator.New(),
-		userService: u,
+		validator: validator.New(),
 	}
 }
 
+var userService = service.NewUserService()
+
 func (av *AuthValidator) Validate(i interface{}) error {
-	exists, err := av.userService.Exists(i.(*model.AuthRequest))
+	exists, err := userService.Exists(i.(*model.AuthRequest))
 	if !exists {
 		log.Printf("user dont exists: %s", err.Error())
 		return echo.NewHTTPError(http.StatusUnauthorized, err.Error())

@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/CaioAureliano/gortener/internal/auth/config"
+	"github.com/CaioAureliano/gortener/internal/auth/router"
+	"github.com/CaioAureliano/gortener/internal/auth/validator"
 	"github.com/labstack/echo/v4"
 )
 
@@ -19,12 +20,14 @@ func NewApp(e *echo.Echo) *App {
 var (
 	port = fmt.Sprintf(":%s", os.Getenv("PORT"))
 
-	authConfig = config.NewAuthConfig()
+	authRouter = router.NewAuthRouter()
 )
 
 func (a *App) Run() error {
 
-	authConfig.Resolve(a.e)
+	a.e.Validator = validator.NewAuthValidator()
+
+	authRouter.Router(a.e)
 
 	return a.e.Start(port)
 }

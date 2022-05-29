@@ -10,24 +10,22 @@ import (
 )
 
 type UserHandler struct {
-	userService *service.UserService
 }
 
-func NewUserHandler(u *service.UserService) *UserHandler {
-	return &UserHandler{
-		userService: u,
-	}
+func NewUserHandler() *UserHandler {
+	return &UserHandler{}
 }
+
+var userService = service.NewUserService()
 
 func (h *UserHandler) Create(c echo.Context) error {
 	var userRequest *model.UserCreateRequest
 	if err := c.Bind(&userRequest); err != nil {
-		log.Printf("[auth handler] error to bind body: %s", err.Error())
+		log.Printf("error to bind body: %s", err.Error())
 		return err
 	}
 
-	if err := h.userService.Create(userRequest); err != nil {
-		log.Printf("error to create a new user: %s", err.Error())
+	if err := userService.Create(userRequest); err != nil {
 		return err
 	}
 

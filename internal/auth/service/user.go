@@ -9,14 +9,13 @@ import (
 )
 
 type UserService struct {
-	userRepository *repository.UserRepository
 }
 
-func NewUserService(r *repository.UserRepository) *UserService {
-	return &UserService{
-		userRepository: r,
-	}
+func NewUserService() *UserService {
+	return &UserService{}
 }
+
+var userRepository = repository.NewUserRepository()
 
 func (u *UserService) Create(req *model.UserCreateRequest) error {
 	b, err := json.Marshal(req)
@@ -32,7 +31,9 @@ func (u *UserService) Create(req *model.UserCreateRequest) error {
 
 	// TODO: Validate user
 
-	if err := u.userRepository.Create(user); err != nil {
+	// TODO: Encrypt password with bcrypt
+
+	if err := userRepository.Create(user); err != nil {
 		log.Printf("error to creata a new user: %s", err.Error())
 		return err
 	}
@@ -41,5 +42,5 @@ func (u *UserService) Create(req *model.UserCreateRequest) error {
 }
 
 func (u *UserService) Exists(req *model.AuthRequest) (bool, error) {
-	return u.userRepository.ExistsByEmail(req.Email)
+	return userRepository.ExistsByEmail(req.Email)
 }

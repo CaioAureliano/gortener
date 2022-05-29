@@ -10,14 +10,13 @@ import (
 )
 
 type AuthHandler struct {
-	authService service.AuthService
 }
 
-func NewAuthHandler(authService service.AuthService) *AuthHandler {
-	return &AuthHandler{
-		authService: authService,
-	}
+func NewAuthHandler() *AuthHandler {
+	return &AuthHandler{}
 }
+
+var authService = service.NewAuthService()
 
 func (h *AuthHandler) Authenticate(c echo.Context) error {
 	var loginRequest *model.AuthRequest
@@ -30,7 +29,7 @@ func (h *AuthHandler) Authenticate(c echo.Context) error {
 		return err
 	}
 
-	res, err := h.authService.Login(loginRequest)
+	res, err := authService.Login(loginRequest)
 	if err != nil {
 		log.Printf("error to authenticate: %s", err.Error())
 		return err

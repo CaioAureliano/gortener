@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+
+  api:
+    build: .
+    environment:
+      - PORT=${PORT}
+      - MONGO_URI=mongodb://mongo:27017
+      - DB_NAME=${DB_NAME}
+      - SECRET=${SECRET}
+    ports:
+      - ${PORT}:${PORT}
+    depends_on:
+      - mongo
+      
+  mongo:
+    image: mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb:/data/db
+
+volumes:
+  mongodb:

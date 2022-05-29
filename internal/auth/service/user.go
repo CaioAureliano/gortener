@@ -6,6 +6,7 @@ import (
 
 	"github.com/CaioAureliano/gortener/internal/auth/model"
 	"github.com/CaioAureliano/gortener/internal/auth/repository"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
@@ -31,7 +32,12 @@ func (u *UserService) Create(req *model.UserCreateRequest) error {
 
 	// TODO: Validate user
 
-	// TODO: Encrypt password with bcrypt
+	encryptPass, err := bcrypt.GenerateFromPassword([]byte(req.Password), 8)
+	if err != nil {
+		return err
+	}
+
+	user.Password = string(encryptPass)
 
 	if err := userRepository.Create(user); err != nil {
 		log.Printf("error to creata a new user: %s", err.Error())

@@ -2,6 +2,7 @@ package service
 
 import (
 	"log"
+	"os"
 	"time"
 
 	"github.com/CaioAureliano/gortener/internal/auth/model"
@@ -25,7 +26,7 @@ type jwtCustomClaims struct {
 	StandardClaims jwt.StandardClaims
 }
 
-var TOKEN_SECRET_KEY = []byte("secret")
+var TOKEN_SECRET_KEY = os.Getenv("SECRET")
 
 func (a *AuthService) Login(userRequest *model.AuthRequest) (*JwtRespose, error) {
 	claims := a.createCustomClaimsByEmail(userRequest.Email)

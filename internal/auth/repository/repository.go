@@ -58,3 +58,12 @@ func (r *UserRepository) ExistsByEmail(email string) (bool, error) {
 
 	return true, nil
 }
+
+func (r *UserRepository) GetByField(value, field string) (*model.User, error) {
+	var user *model.User
+	if err := r.collection.FindOne(r.ctx, bson.M{field: value}, nil).Decode(&user); err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}

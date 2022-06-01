@@ -1,12 +1,16 @@
 package service
 
 import (
+	"errors"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
 	"github.com/CaioAureliano/gortener/internal/auth/model"
 	"github.com/golang-jwt/jwt"
+	"github.com/labstack/echo/v4"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
@@ -16,56 +20,67 @@ func NewAuthService() *AuthService {
 	return &AuthService{}
 }
 
-type JwtRespose struct {
-	Token     string `json:"token"`
-	ExpiresAt int64  `json:"expires_at"`
-}
+var (
+	tokenSecretKey = os.Getenv("SECRET")
 
-type jwtCustomClaims struct {
-	Email          string `json:"email"`
-	StandardClaims jwt.StandardClaims
-}
+	userService = NewUserService()
+)
 
-var TOKEN_SECRET_KEY = os.Getenv("SECRET")
+func (a *AuthService) Login(req *model.AuthRequest) (*model.JwtRespose, error) {
+	if err := validateUser(req); err != nil {
+		return nil, echo.NewHTTPError(http.StatusForbidden, err.Error())
+	}
 
-func (a *AuthService) Login(userRequest *model.AuthRequest) (*JwtRespose, error) {
-	claims := a.createCustomClaimsByEmail(userRequest.Email)
+	claims := createClaims(req.Email)
 
-	token, err := a.generateTokenByClaims(claims.StandardClaims)
+	token, err := generateToken(claims.StandardClaims)
 	if err != nil {
 		log.Printf("error to generate token: %s", err.Error())
 		return nil, err
 	}
 
-	return a.makeJwtResponse(token, claims.StandardClaims.ExpiresAt), nil
+	return buildJwtResponse(token, claims.StandardClaims.ExpiresAt), nil
 }
 
-func (a *AuthService) createCustomClaimsByEmail(email string) *jwtCustomClaims {
-	return &jwtCustomClaims{
+func createClaims(email string) *model.JwtCustomClaims {
+	return &model.JwtCustomClaims{
 		Email: email,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: a.expiresAt().UnixMilli(),
+			ExpiresAt: expiresAt().UnixMilli(),
 		},
 	}
 }
 
-func (a *AuthService) expiresAt() time.Time {
+func expiresAt() time.Time {
 	return time.Now().Add(time.Hour * 12)
 }
 
-func (a *AuthService) generateTokenByClaims(claims jwt.StandardClaims) (t string, err error) {
+func generateToken(claims jwt.StandardClaims) (t string, err error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	if t, err = token.SignedString(TOKEN_SECRET_KEY); err != nil {
-		return
-	}
-
+	t, err = token.SignedString([]byte(tokenSecretKey))
 	return
 }
 
-func (a *AuthService) makeJwtResponse(token string, expiresAt int64) *JwtRespose {
-	return &JwtRespose{
+func buildJwtResponse(token string, expiresAt int64) *model.JwtRespose {
+	return &model.JwtRespose{
 		Token:     token,
 		ExpiresAt: expiresAt,
 	}
+}
+
+func validateUser(req *model.AuthRequest) error {
+	if exists, err := userService.Exists(req.Email); !exists || err != nil {
+		return errors.New("user not exists")
+	}
+
+	userFound, err := userService.GetByField(req.Email, "email")
+	if err != nil {
+		return err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(userFound.Password), []byte(req.Password)); err != nil {
+		return errors.New("invalid email/password")
+	}
+
+	return nil
 }

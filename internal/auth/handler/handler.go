@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/CaioAureliano/gortener/internal/auth/model"
@@ -19,19 +18,13 @@ func NewAuthHandler() *AuthHandler {
 var authService = service.NewAuthService()
 
 func (h *AuthHandler) Authenticate(c echo.Context) error {
-	var loginRequest *model.AuthRequest
-	if err := c.Bind(&loginRequest); err != nil {
+	var req *model.AuthRequest
+	if err := c.Bind(&req); err != nil {
 		return err
 	}
 
-	if err := c.Validate(loginRequest); err != nil {
-		log.Printf("error to login: %s", err.Error())
-		return err
-	}
-
-	res, err := authService.Login(loginRequest)
+	res, err := authService.Login(req)
 	if err != nil {
-		log.Printf("error to authenticate: %s", err.Error())
 		return err
 	}
 

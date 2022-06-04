@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/CaioAureliano/gortener/internal/auth/router"
+	authRouter "github.com/CaioAureliano/gortener/internal/auth/router"
+	shortenerRouter "github.com/CaioAureliano/gortener/internal/shortener/router"
 	"github.com/labstack/echo/v4"
 )
 
@@ -19,11 +20,13 @@ func NewApp(e *echo.Echo) *App {
 var (
 	port = fmt.Sprintf(":%s", os.Getenv("PORT"))
 
-	authRouter = router.NewAuthRouter()
+	ar = authRouter.NewAuthRouter()
+	sr = shortenerRouter.NewShortenerRouter()
 )
 
 func (a *App) Run() error {
-	authRouter.Router(a.e)
+	ar.Router(a.e)
+	sr.Router(a.e)
 
 	return a.e.Start(port)
 }

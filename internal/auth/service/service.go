@@ -21,7 +21,7 @@ func NewAuthService() *AuthService {
 }
 
 var (
-	tokenSecretKey = os.Getenv("SECRET")
+	TOKEN_SECRET_KEY = os.Getenv("SECRET")
 
 	userService = NewUserService()
 )
@@ -57,7 +57,7 @@ func expiresAt() time.Time {
 
 func generateToken(claims jwt.StandardClaims) (t string, err error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	t, err = token.SignedString([]byte(tokenSecretKey))
+	t, err = token.SignedString([]byte(TOKEN_SECRET_KEY))
 	return
 }
 

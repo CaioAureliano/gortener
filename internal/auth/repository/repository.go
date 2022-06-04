@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/CaioAureliano/gortener/internal/auth/model"
-	"github.com/CaioAureliano/gortener/internal/database"
+	"github.com/CaioAureliano/gortener/pkg/database"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -47,18 +47,6 @@ func (r *UserRepository) Create(user *model.User) error {
 	return nil
 }
 
-func (r *UserRepository) ExistsByEmail(email string) (bool, error) {
-	var user *model.User
-
-	filter := bson.M{"email": email}
-	err := r.collection.FindOne(r.ctx, filter).Decode(&user)
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
 func (r *UserRepository) GetByField(value, field string) (*model.User, error) {
 	var user *model.User
 	if err := r.collection.FindOne(r.ctx, bson.M{field: value}, nil).Decode(&user); err != nil {
@@ -66,4 +54,11 @@ func (r *UserRepository) GetByField(value, field string) (*model.User, error) {
 	}
 
 	return user, nil
+}
+
+func (r *UserRepository) ExistsByEmail(email string) (bool, error) {
+	if user, err := r.GetByField(email, "email"); user == nil || err != nil {
+		return false, err
+	}
+	return true, nil
 }

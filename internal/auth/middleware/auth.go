@@ -58,6 +58,9 @@ func isExpiredToken(claims jwt.Claims) bool {
 
 func getExpiresAtFromClaims(claims jwt.Claims) float64 {
 	mapClaims := claims.(jwt.MapClaims)
-	exp := mapClaims["exp"]
+	exp, exists := mapClaims["expires_at"]
+	if !exists {
+		return 0
+	}
 	return exp.(float64)
 }

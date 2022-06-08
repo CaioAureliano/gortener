@@ -28,12 +28,12 @@ var (
 
 func (a *AuthService) Login(req *model.AuthRequest) (*model.JwtRespose, error) {
 	if err := validateUser(req); err != nil {
-		return nil, echo.NewHTTPError(http.StatusForbidden, err.Error())
+		return nil, echo.NewHTTPError(http.StatusUnauthorized, err.Error())
 	}
 
 	claims := createClaims(req.Email)
 
-	token, err := generateToken(claims.StandardClaims)
+	token, err := generateToken(claims)
 	if err != nil {
 		log.Printf("error to generate token: %s", err.Error())
 		return nil, err
@@ -44,10 +44,9 @@ func (a *AuthService) Login(req *model.AuthRequest) (*model.JwtRespose, error) {
 
 func createClaims(email string) *model.JwtCustomClaims {
 	return &model.JwtCustomClaims{
-		Email: email,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expiresAt().UnixMilli(),
-		},
+		Email:          email,
+		ExpiresAt:      expiresAt().UnixMilli(),
+		StandardClaims: jwt.StandardClaims{},
 	}
 }
 
@@ -55,7 +54,7 @@ func expiresAt() time.Time {
 	return time.Now().Add(time.Hour * 12)
 }
 
-func generateToken(claims jwt.StandardClaims) (t string, err error) {
+func generateToken(claims *model.JwtCustomClaims) (t string, err error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	t, err = token.SignedString([]byte(TOKEN_SECRET_KEY))
 	return

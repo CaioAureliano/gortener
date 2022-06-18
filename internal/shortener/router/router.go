@@ -18,9 +18,9 @@ const SHORTENER_ENDPOINT = "/shortener"
 var shortenerHandler = handler.NewShortenerHandler()
 
 func (sr *ShortenerRouter) Router(e *echo.Echo) {
+	e.GET("/:slug", shortenerHandler.RedirectBySlug)
+
 	s := e.Group(SHORTENER_ENDPOINT)
-
 	s.Use(authMiddleware.ConfigJwt())
-
 	s.POST("", shortenerHandler.Create)
 }

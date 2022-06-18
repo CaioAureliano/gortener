@@ -24,6 +24,5 @@ const (
 
 func (r *AuthRouter) Router(e *echo.Echo) {
 	e.POST(AUTH_ENDPOINT, authHandler.Authenticate)
-
 	e.POST(USERS_ENDPOINT, userHandler.Create)
 }

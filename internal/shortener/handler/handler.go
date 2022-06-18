@@ -33,3 +33,12 @@ func (sh *ShortenerHandler) Create(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, echo.Map{"slug": slug})
 }
+
+func (sh *ShortenerHandler) RedirectBySlug(c echo.Context) error {
+	url, err := shortenerService.GetUrlBySlug(c.Param("slug"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, echo.Map{"message": "not found"})
+	}
+
+	return c.Redirect(http.StatusMovedPermanently, url)
+}

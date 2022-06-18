@@ -23,7 +23,7 @@ func NewShortenerRepository() *ShortenerRepository {
 	}
 }
 
-var SHORTENER_COLLECTION_NAME = "shortener"
+const SHORTENER_COLLECTION_NAME = "shortener"
 
 func (sr *ShortenerRepository) Create(s *model.Shortener) error {
 	s.CreatedAt = time.Now()
@@ -45,4 +45,13 @@ func (sr *ShortenerRepository) Create(s *model.Shortener) error {
 	}
 
 	return nil
+}
+
+func (sr *ShortenerRepository) GetBySlug(slug string) (*model.Shortener, error) {
+	var result *model.Shortener
+	if err := sr.collection.FindOne(sr.ctx, bson.M{"slug": slug}, nil).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

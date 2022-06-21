@@ -22,19 +22,19 @@ func NewUserService(repository repository.UserRepository) *UserService {
 	}
 }
 
+var (
+	ErrUserNotFound = errors.New("not found user")
+)
+
 func (u *UserService) GetByField(value, key string) (*model.User, error) {
 	user, err := u.userRepository.GetByField(value, key)
 	if err != nil {
-		return nil, errors.New("user not found")
+		return nil, ErrUserNotFound
 	}
 	return user, nil
 }
 
 func (u *UserService) Create(req *model.UserCreateRequest) error {
-	if err := isEqualsPassword(req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	}
-
 	user := mapRequestToModel(req)
 
 	if exists, _ := u.Exists(req.Email); exists {
@@ -72,12 +72,5 @@ func encryptPassword(user *model.User) error {
 		return err
 	}
 	user.Password = string(encryptPass)
-	return nil
-}
-
-func isEqualsPassword(req *model.UserCreateRequest) error {
-	if req.Password != req.RepeatPassword {
-		return errors.New("passwords should be equals")
-	}
 	return nil
 }

@@ -1,10 +1,12 @@
 package server
 
 import (
-	"fmt"
 	"os"
 
+	"github.com/CaioAureliano/gortener/internal/auth/dao"
+	"github.com/CaioAureliano/gortener/internal/auth/handler"
 	authRouter "github.com/CaioAureliano/gortener/internal/auth/router"
+	"github.com/CaioAureliano/gortener/internal/auth/service"
 	shortenerRouter "github.com/CaioAureliano/gortener/internal/shortener/router"
 	"github.com/labstack/echo/v4"
 )
@@ -18,14 +20,22 @@ func NewApp(e *echo.Echo) *App {
 }
 
 var (
-	port = fmt.Sprintf(":%s", os.Getenv("PORT"))
-
-	ar = authRouter.NewAuthRouter()
-	sr = shortenerRouter.NewShortenerRouter()
+	port = ":" + os.Getenv("PORT")
+	sr   = shortenerRouter.NewShortenerRouter()
 )
 
 func (a *App) Run() error {
-	ar.Router(a.e)
+
+	userRepository := dao.NewUserDao()
+	userService := service.NewUserService(userRepository)
+	userHandler := handler.NewUserHandler(userService)
+
+	authService := service.NewAuthService(userService)
+	authHandler := handler.NewAuthHandler(authService)
+
+	authRoutes := authRouter.NewAuthRouter(userHandler, authHandler)
+	authRoutes.Router(a.e)
+
 	sr.Router(a.e)
 
 	return a.e.Start(port)

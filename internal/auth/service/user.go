@@ -13,16 +13,17 @@ import (
 )
 
 type UserService struct {
+	userRepository repository.UserRepository
 }
 
-func NewUserService() *UserService {
-	return &UserService{}
+func NewUserService(repository repository.UserRepository) *UserService {
+	return &UserService{
+		userRepository: repository,
+	}
 }
-
-var userRepository = repository.NewUserRepository()
 
 func (u *UserService) GetByField(value, key string) (*model.User, error) {
-	user, err := userRepository.GetByField(value, key)
+	user, err := u.userRepository.GetByField(value, key)
 	if err != nil {
 		return nil, errors.New("user not found")
 	}
@@ -45,7 +46,7 @@ func (u *UserService) Create(req *model.UserCreateRequest) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
 	}
 
-	if err := userRepository.Create(user); err != nil {
+	if err := u.userRepository.Create(user); err != nil {
 		log.Printf("error to creata a new user: %s", err.Error())
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -54,7 +55,7 @@ func (u *UserService) Create(req *model.UserCreateRequest) error {
 }
 
 func (u *UserService) Exists(email string) (bool, error) {
-	return userRepository.ExistsByEmail(email)
+	return u.userRepository.ExistsByEmail(email)
 }
 
 func mapRequestToModel(req *model.UserCreateRequest) *model.User {

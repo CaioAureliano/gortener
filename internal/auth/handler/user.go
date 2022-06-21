@@ -10,13 +10,14 @@ import (
 )
 
 type UserHandler struct {
+	userService *service.UserService
 }
 
-func NewUserHandler() *UserHandler {
-	return &UserHandler{}
+func NewUserHandler(service *service.UserService) *UserHandler {
+	return &UserHandler{
+		userService: service,
+	}
 }
-
-var userService = service.NewUserService()
 
 func (h *UserHandler) Create(c echo.Context) error {
 	var userRequest *model.UserCreateRequest
@@ -25,7 +26,7 @@ func (h *UserHandler) Create(c echo.Context) error {
 		return err
 	}
 
-	if err := userService.Create(userRequest); err != nil {
+	if err := h.userService.Create(userRequest); err != nil {
 		return err
 	}
 

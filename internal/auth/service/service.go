@@ -14,20 +14,19 @@ import (
 )
 
 type AuthService struct {
+	userService *UserService
 }
 
-func NewAuthService() *AuthService {
-	return &AuthService{}
+func NewAuthService(userService *UserService) *AuthService {
+	return &AuthService{
+		userService: userService,
+	}
 }
 
-var (
-	TOKEN_SECRET_KEY = os.Getenv("SECRET")
-
-	userService = NewUserService()
-)
+var TOKEN_SECRET_KEY = os.Getenv("SECRET")
 
 func (a *AuthService) Login(req *model.AuthRequest) (*model.JwtRespose, error) {
-	if err := validateUser(req); err != nil {
+	if err := a.validateUser(req); err != nil {
 		return nil, echo.NewHTTPError(http.StatusUnauthorized, err.Error())
 	}
 
@@ -67,12 +66,12 @@ func buildJwtResponse(token string, expiresAt int64) *model.JwtRespose {
 	}
 }
 
-func validateUser(req *model.AuthRequest) error {
-	if exists, err := userService.Exists(req.Email); !exists || err != nil {
+func (a *AuthService) validateUser(req *model.AuthRequest) error {
+	if exists, err := a.userService.Exists(req.Email); !exists || err != nil {
 		return errors.New("user not exists")
 	}
 
-	userFound, err := userService.GetByField(req.Email, "email")
+	userFound, err := a.userService.GetByField(req.Email, "email")
 	if err != nil {
 		return err
 	}

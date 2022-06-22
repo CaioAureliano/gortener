@@ -12,12 +12,18 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserService struct {
+type UserService interface {
+	GetByField(value, key string) (*model.User, error)
+	Create(req *model.UserCreateRequest) error
+	Exists(email string) (bool, error)
+}
+
+type userService struct {
 	userRepository repository.UserRepository
 }
 
-func NewUserService(repository repository.UserRepository) *UserService {
-	return &UserService{
+func NewUserService(repository repository.UserRepository) UserService {
+	return &userService{
 		userRepository: repository,
 	}
 }
@@ -26,7 +32,7 @@ var (
 	ErrUserNotFound = errors.New("not found user")
 )
 
-func (u *UserService) GetByField(value, key string) (*model.User, error) {
+func (u *userService) GetByField(value, key string) (*model.User, error) {
 	user, err := u.userRepository.GetByField(value, key)
 	if err != nil {
 		return nil, ErrUserNotFound
@@ -34,7 +40,7 @@ func (u *UserService) GetByField(value, key string) (*model.User, error) {
 	return user, nil
 }
 
-func (u *UserService) Create(req *model.UserCreateRequest) error {
+func (u *userService) Create(req *model.UserCreateRequest) error {
 	user := mapRequestToModel(req)
 
 	if exists, _ := u.Exists(req.Email); exists {
@@ -54,7 +60,7 @@ func (u *UserService) Create(req *model.UserCreateRequest) error {
 	return nil
 }
 
-func (u *UserService) Exists(email string) (bool, error) {
+func (u *userService) Exists(email string) (bool, error) {
 	return u.userRepository.ExistsByEmail(email)
 }
 

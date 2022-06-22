@@ -14,10 +14,10 @@ import (
 )
 
 type AuthService struct {
-	userService *UserService
+	userService UserService
 }
 
-func NewAuthService(userService *UserService) *AuthService {
+func NewAuthService(userService UserService) *AuthService {
 	return &AuthService{
 		userService: userService,
 	}

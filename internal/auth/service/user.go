@@ -41,7 +41,11 @@ func (u *userService) GetByField(value, key string) (*model.User, error) {
 }
 
 func (u *userService) Create(req *model.UserCreateRequest) error {
-	user := mapRequestToModel(req)
+	user := &model.User{
+		Name:     req.Name,
+		Email:    req.Email,
+		Password: req.Password,
+	}
 
 	if exists, _ := u.Exists(req.Email); exists {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("User already exists with email: %s", req.Email))
@@ -62,14 +66,6 @@ func (u *userService) Create(req *model.UserCreateRequest) error {
 
 func (u *userService) Exists(email string) (bool, error) {
 	return u.userRepository.ExistsByEmail(email)
-}
-
-func mapRequestToModel(req *model.UserCreateRequest) *model.User {
-	return &model.User{
-		Name:     req.Name,
-		Email:    req.Email,
-		Password: req.Password,
-	}
 }
 
 func encryptPassword(user *model.User) error {

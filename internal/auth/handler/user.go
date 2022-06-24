@@ -26,6 +26,10 @@ func (h *UserHandler) Create(c echo.Context) error {
 		return err
 	}
 
+	if userRequest == nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Required request body")
+	}
+
 	if err := h.userService.Create(userRequest); err != nil {
 		return err
 	}

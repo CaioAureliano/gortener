@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"strings"
 	"time"
 
@@ -20,12 +21,10 @@ func New() Shortener {
 	return &shortener{}
 }
 
-const (
-	SLUG_LENGTH = 5
-)
-
 var (
-	repositoryNew = repository.New
+	ErrInvalidURL = errors.New("invalid url")
+
+	shortenerRepository = repository.New
 )
 
 func (s *shortener) Create(url string) (*model.Shortener, error) {
@@ -33,7 +32,7 @@ func (s *shortener) Create(url string) (*model.Shortener, error) {
 		url = "http://" + url
 	}
 
-	slug := randutil.RandomString(SLUG_LENGTH)
+	slug := randutil.RandomString(5)
 
 	shortToCreate := &model.Shortener{
 		Url:       url,
@@ -41,7 +40,11 @@ func (s *shortener) Create(url string) (*model.Shortener, error) {
 		CreatedAt: time.Now(),
 	}
 
-	createdUrl, _ := repositoryNew().Create(shortToCreate)
+	createdUrl, err := shortenerRepository().Create(shortToCreate)
+
+	if err != nil {
+		return nil, err
+	}
 
 	return createdUrl, nil
 }

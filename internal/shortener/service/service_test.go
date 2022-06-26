@@ -2,7 +2,6 @@ package service
 
 import (
 	"testing"
-	"time"
 
 	"github.com/CaioAureliano/gortener/internal/shortener/model"
 	"github.com/CaioAureliano/gortener/internal/shortener/repository"
@@ -21,26 +20,53 @@ func (m mockRepository) Create(shortener *model.Shortener) (*model.Shortener, er
 }
 
 func TestCreate(t *testing.T) {
-	expectedUrl := "http://google.com"
-	urlMock := "google.com"
 
-	repositoryNew = func() repository.Shortener {
-		return mockRepository{
-			fnCreate: func(shortener *model.Shortener) (*model.Shortener, error) {
-				return &model.Shortener{
-					Url:       expectedUrl,
-					Slug:      "ABCD",
-					CreatedAt: time.Now(),
-				}, nil
+	tests := []struct {
+		name     string
+		gotUrl   string
+		wantUrl  string
+		wantErr  error
+		repoMock repository.Shortener
+	}{
+		{
+			name:    "should be return a shortener created with valid URL",
+			gotUrl:  "google.com",
+			wantUrl: "http://google.com",
+			wantErr: nil,
+			repoMock: mockRepository{
+				fnCreate: func(shortener *model.Shortener) (*model.Shortener, error) {
+					return &model.Shortener{
+						Url: "http://google.com",
+					}, nil
+				},
 			},
-		}
+		},
+		{
+			name:    "invalid url",
+			gotUrl:  "url",
+			wantUrl: "",
+			wantErr: ErrInvalidURL,
+			repoMock: mockRepository{
+				fnCreate: func(shortener *model.Shortener) (*model.Shortener, error) {
+					return nil, ErrInvalidURL
+				},
+			},
+		},
 	}
 
-	shortenerService := New()
-	shortUrlCreated, err := shortenerService.Create(urlMock)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			shortenerRepository = func() repository.Shortener {
+				return tt.repoMock
+			}
 
-	assert.Equal(t, expectedUrl, shortUrlCreated.Url)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, shortUrlCreated.Slug)
-	assert.NotEmpty(t, shortUrlCreated.CreatedAt)
+			shortenerService := New()
+			created, err := shortenerService.Create(tt.gotUrl)
+
+			if created != nil {
+				assert.Equal(t, tt.wantUrl, created.Url)
+			}
+			assert.Equal(t, tt.wantErr, err)
+		})
+	}
 }

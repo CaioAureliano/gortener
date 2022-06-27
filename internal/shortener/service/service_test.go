@@ -21,6 +21,29 @@ func (m mockRepository) Create(shortener *model.Shortener) (*model.Shortener, er
 
 func TestCreate(t *testing.T) {
 
+	t.Run("model response", func(t *testing.T) {
+		mockUrl := "www.google.com"
+
+		shortenerRepository = func() repository.Shortener {
+			return mockRepository{
+				fnCreate: func(shortener *model.Shortener) (*model.Shortener, error) {
+					return shortener, nil
+				},
+			}
+		}
+
+		shortService := New()
+		shortCreated, err := shortService.Create(mockUrl)
+
+		if err != nil {
+			t.Errorf("error to create a shortener URL: %s", err.Error())
+		}
+
+		assert.NoError(t, err)
+		assert.Equal(t, "http://"+mockUrl, shortCreated.Url)
+		assert.Equal(t, slugLength, len([]byte(shortCreated.Slug)))
+	})
+
 	t.Run("URL create", func(t *testing.T) {
 		tests := []struct {
 			name     string
@@ -69,5 +92,4 @@ func TestCreate(t *testing.T) {
 			})
 		}
 	})
-
 }

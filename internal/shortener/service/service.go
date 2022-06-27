@@ -29,7 +29,11 @@ var (
 	shortenerRepository = repository.New
 )
 
-const regexValidURL = `[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`
+const (
+	slugLength = 5
+
+	regexValidURL = `[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`
+)
 
 func (s *shortener) Create(url string) (*model.Shortener, error) {
 	isValid, err := regexp.MatchString(regexValidURL, url)
@@ -42,7 +46,7 @@ func (s *shortener) Create(url string) (*model.Shortener, error) {
 		url = "http://" + url
 	}
 
-	slug := randutil.RandomString(5)
+	slug := randutil.RandomString(slugLength)
 
 	shortToCreate := &model.Shortener{
 		Url:       url,

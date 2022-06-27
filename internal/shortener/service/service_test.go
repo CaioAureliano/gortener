@@ -21,50 +21,53 @@ func (m mockRepository) Create(shortener *model.Shortener) (*model.Shortener, er
 
 func TestCreate(t *testing.T) {
 
-	tests := []struct {
-		name     string
-		gotUrl   string
-		wantUrl  string
-		wantErr  error
-		repoMock repository.Shortener
-	}{
-		{
-			name:    "should be return a shortener created with valid URL",
-			gotUrl:  "google.com",
-			wantUrl: "http://google.com",
-			wantErr: nil,
-			repoMock: mockRepository{
-				fnCreate: func(shortener *model.Shortener) (*model.Shortener, error) {
-					return shortener, nil
+	t.Run("URL create", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			gotUrl   string
+			wantUrl  string
+			wantErr  error
+			repoMock repository.Shortener
+		}{
+			{
+				name:    "should be return a shortener created with valid URL",
+				gotUrl:  "google.com",
+				wantUrl: "http://google.com",
+				wantErr: nil,
+				repoMock: mockRepository{
+					fnCreate: func(shortener *model.Shortener) (*model.Shortener, error) {
+						return shortener, nil
+					},
 				},
 			},
-		},
-		{
-			name:    "should be return ErrInvalidURL with invalid URL",
-			gotUrl:  "url",
-			wantUrl: "",
-			wantErr: ErrInvalidURL,
-			repoMock: mockRepository{
-				fnCreate: func(shortener *model.Shortener) (*model.Shortener, error) {
-					return nil, ErrInvalidURL
+			{
+				name:    "should be return ErrInvalidURL with invalid URL",
+				gotUrl:  "url",
+				wantUrl: "",
+				wantErr: ErrInvalidURL,
+				repoMock: mockRepository{
+					fnCreate: func(shortener *model.Shortener) (*model.Shortener, error) {
+						return shortener, nil
+					},
 				},
 			},
-		},
-	}
+		}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			shortenerRepository = func() repository.Shortener {
-				return tt.repoMock
-			}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				shortenerRepository = func() repository.Shortener {
+					return tt.repoMock
+				}
 
-			shortenerService := New()
-			created, err := shortenerService.Create(tt.gotUrl)
+				shortenerService := New()
+				created, err := shortenerService.Create(tt.gotUrl)
 
-			if created != nil {
-				assert.Equal(t, tt.wantUrl, created.Url)
-			}
-			assert.Equal(t, tt.wantErr, err)
-		})
-	}
+				if created != nil {
+					assert.Equal(t, tt.wantUrl, created.Url)
+				}
+				assert.Equal(t, tt.wantErr, err)
+			})
+		}
+	})
+
 }

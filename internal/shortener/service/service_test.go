@@ -35,14 +35,12 @@ func TestCreate(t *testing.T) {
 			wantErr: nil,
 			repoMock: mockRepository{
 				fnCreate: func(shortener *model.Shortener) (*model.Shortener, error) {
-					return &model.Shortener{
-						Url: "http://google.com",
-					}, nil
+					return shortener, nil
 				},
 			},
 		},
 		{
-			name:    "invalid url",
+			name:    "should be return ErrInvalidURL with invalid URL",
 			gotUrl:  "url",
 			wantUrl: "",
 			wantErr: ErrInvalidURL,

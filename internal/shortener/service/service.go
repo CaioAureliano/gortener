@@ -14,6 +14,7 @@ import (
 
 type Shortener interface {
 	Create(url string) (*model.Shortener, error)
+	Get(slug string) (*model.Shortener, error)
 }
 
 type shortener struct {
@@ -24,7 +25,9 @@ func New() Shortener {
 }
 
 var (
-	ErrInvalidURL = errors.New("invalid url")
+	ErrInvalidURL        = errors.New("invalid url")
+	ErrInvalidSlug       = errors.New("invalid slug")
+	ErrShortenerNotFound = errors.New("not found short URL")
 
 	shortenerRepository = repository.New
 )
@@ -61,4 +64,20 @@ func (s *shortener) Create(url string) (*model.Shortener, error) {
 	}
 
 	return createdUrl, nil
+}
+
+func (s *shortener) Get(slug string) (*model.Shortener, error) {
+	reqSlugLenght := len([]byte(slug))
+	if reqSlugLenght != slugLength {
+		log.Printf("invalid slug length: %s", slug)
+		return nil, ErrInvalidSlug
+	}
+
+	shortUrl, err := shortenerRepository().Get(slug)
+	if err != nil {
+		log.Printf("shortener not found with slug %s - error: %s", slug, err.Error())
+		return nil, ErrShortenerNotFound
+	}
+
+	return shortUrl, nil
 }

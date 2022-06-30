@@ -5,7 +5,8 @@ import "github.com/CaioAureliano/gortener/internal/shortener/model"
 type Shortener interface {
 	Create(shortener *model.Shortener) (*model.Shortener, error)
 	Get(slug string) (*model.Shortener, error)
-	AddClick(click model.Click, id string) (*model.Shortener, error)
+	Update(shortener *model.Shortener, id string) (*model.Shortener, error)
+	AddClick(click model.Click, slug string) (*model.Shortener, error)
 }
 
 type shortener struct {
@@ -23,6 +24,10 @@ func (s shortener) Get(slug string) (*model.Shortener, error) {
 	return nil, nil
 }
 
-func (s shortener) AddClick(click model.Click, id string) (*model.Shortener, error) {
+func (s shortener) Update(shortener *model.Shortener, id string) (*model.Shortener, error) {
+	return nil, nil
+}
+
+func (s shortener) AddClick(click model.Click, slug string) (*model.Shortener, error) {
 	return nil, nil
 }

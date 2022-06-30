@@ -15,6 +15,7 @@ import (
 type Shortener interface {
 	Create(url string) (*model.Shortener, error)
 	Get(slug string) (*model.Shortener, error)
+	AddClick(click model.Click, slug string) (*model.Shortener, error)
 }
 
 type shortener struct {
@@ -80,4 +81,23 @@ func (s *shortener) Get(slug string) (*model.Shortener, error) {
 	}
 
 	return shortUrl, nil
+}
+
+func (s *shortener) AddClick(click model.Click, slug string) (*model.Shortener, error) {
+	shortener, err := s.Get(slug)
+	if err != nil {
+		return nil, err
+	}
+
+	clicks := shortener.Click
+	clicks = append(clicks, click)
+	shortener.Click = clicks
+
+	shortUpdated, err := shortenerRepository().Update(shortener, shortener.ID)
+	if err != nil {
+		log.Printf("error to update shortener: %v with click: %v", shortener, click)
+		return nil, errors.New("error to update shortener with click")
+	}
+
+	return shortUpdated, nil
 }

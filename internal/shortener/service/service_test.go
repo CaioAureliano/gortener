@@ -11,6 +11,7 @@ import (
 type mockRepository struct {
 	fnCreate   func(shortener *model.Shortener) (*model.Shortener, error)
 	fnGet      func(slug string) (*model.Shortener, error)
+	fnUpate    func(shortener *model.Shortener, id string) (*model.Shortener, error)
 	fnAddClick func(click model.Click, id string) (*model.Shortener, error)
 }
 
@@ -28,11 +29,18 @@ func (m mockRepository) Get(slug string) (*model.Shortener, error) {
 	return m.fnGet(slug)
 }
 
-func (m mockRepository) AddClick(click model.Click, id string) (*model.Shortener, error) {
+func (m mockRepository) Update(shortener *model.Shortener, id string) (*model.Shortener, error) {
+	if m.fnUpate == nil {
+		return nil, nil
+	}
+	return m.fnUpate(shortener, id)
+}
+
+func (m mockRepository) AddClick(click model.Click, slug string) (*model.Shortener, error) {
 	if m.fnAddClick == nil {
 		return nil, nil
 	}
-	return m.fnAddClick(click, id)
+	return m.fnAddClick(click, slug)
 }
 
 func TestCreate(t *testing.T) {
@@ -162,4 +170,39 @@ func TestGet(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAddClick(t *testing.T) {
+	slugMock := "XZY21"
+	clickMock := model.Click{
+		Source:   "other",
+		Device:   "desktop",
+		Browser:  "chrome",
+		Language: "en",
+		System:   "linux",
+	}
+
+	expectedShortUpdate := &model.Shortener{
+		Slug: slugMock,
+		Click: []model.Click{
+			clickMock,
+		},
+	}
+
+	shortenerRepository = func() repository.Shortener {
+		return mockRepository{
+			fnGet: func(slug string) (*model.Shortener, error) {
+				return &model.Shortener{Slug: slugMock}, nil
+			},
+			fnUpate: func(shortener *model.Shortener, id string) (*model.Shortener, error) {
+				return shortener, nil
+			},
+		}
+	}
+
+	shortenerService := New()
+	shortenerUpdated, err := shortenerService.AddClick(clickMock, slugMock)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedShortUpdate, shortenerUpdated)
 }

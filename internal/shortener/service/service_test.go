@@ -173,36 +173,39 @@ func TestGet(t *testing.T) {
 }
 
 func TestAddClick(t *testing.T) {
-	slugMock := "XZY21"
-	clickMock := model.Click{
-		Source:   "other",
-		Device:   "desktop",
-		Browser:  "chrome",
-		Language: "en",
-		System:   "linux",
-	}
+	t.Run("should be return shortener with new valid click and slug", func(t *testing.T) {
 
-	expectedShortUpdate := &model.Shortener{
-		Slug: slugMock,
-		Click: []model.Click{
-			clickMock,
-		},
-	}
+		slugMock := "XZY21"
+		clickMock := model.Click{
+			Source:   "other",
+			Device:   "desktop",
+			Browser:  "chrome",
+			Language: "en",
+			System:   "linux",
+		}
 
-	shortenerRepository = func() repository.Shortener {
-		return mockRepository{
-			fnGet: func(slug string) (*model.Shortener, error) {
-				return &model.Shortener{Slug: slugMock}, nil
-			},
-			fnUpate: func(shortener *model.Shortener, id string) (*model.Shortener, error) {
-				return shortener, nil
+		wantShortener := &model.Shortener{
+			Slug: slugMock,
+			Click: []model.Click{
+				clickMock,
 			},
 		}
-	}
 
-	shortenerService := New()
-	shortenerUpdated, err := shortenerService.AddClick(clickMock, slugMock)
+		shortenerRepository = func() repository.Shortener {
+			return mockRepository{
+				fnGet: func(slug string) (*model.Shortener, error) {
+					return &model.Shortener{Slug: slugMock}, nil
+				},
+				fnUpate: func(shortener *model.Shortener, id string) (*model.Shortener, error) {
+					return shortener, nil
+				},
+			}
+		}
 
-	assert.NoError(t, err)
-	assert.Equal(t, expectedShortUpdate, shortenerUpdated)
+		shortenerService := New()
+		gotShortener, err := shortenerService.AddClick(clickMock, slugMock)
+
+		assert.NoError(t, err)
+		assert.Equal(t, wantShortener, gotShortener)
+	})
 }

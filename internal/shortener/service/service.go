@@ -93,11 +93,11 @@ func (s *shortener) AddClick(click model.Click, slug string) (*model.Shortener, 
 	clicks = append(clicks, click)
 	shortener.Click = clicks
 
-	shortUpdated, err := shortenerRepository().Update(shortener, shortener.ID)
+	updated, err := shortenerRepository().Update(shortener, shortener.ID)
 	if err != nil {
 		log.Printf("error to update shortener: %v with click: %v", shortener, click)
 		return nil, errors.New("error to update shortener with click")
 	}
 
-	return shortUpdated, nil
+	return updated, nil
 }

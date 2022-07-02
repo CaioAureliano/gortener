@@ -16,6 +16,7 @@ type Shortener interface {
 	Create(url string) (*model.Shortener, error)
 	Get(slug string) (*model.Shortener, error)
 	AddClick(click model.Click, slug string) (*model.Shortener, error)
+	Stats(slug string) (*model.Stats, error)
 }
 
 type shortener struct {
@@ -100,4 +101,23 @@ func (s *shortener) AddClick(click model.Click, slug string) (*model.Shortener, 
 	}
 
 	return updated, nil
+}
+
+func (s *shortener) Stats(slug string) (*model.Stats, error) {
+	shortener, err := shortenerRepository().Get(slug)
+	if err != nil {
+		return nil, err
+	}
+
+	clicks := shortener.Click
+
+	stats := &model.Stats{}
+	stats.Clicks = len(clicks)
+	stats.Browsers = make(map[string]int)
+
+	for _, c := range clicks {
+		stats.Browsers[c.Browser] += 1
+	}
+
+	return stats, nil
 }

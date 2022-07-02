@@ -11,7 +11,7 @@ import (
 type mockRepository struct {
 	fnCreate   func(shortener *model.Shortener) (*model.Shortener, error)
 	fnGet      func(slug string) (*model.Shortener, error)
-	fnUpate    func(shortener *model.Shortener, id string) (*model.Shortener, error)
+	fnUpdate   func(shortener *model.Shortener, id string) (*model.Shortener, error)
 	fnAddClick func(click model.Click, id string) (*model.Shortener, error)
 }
 
@@ -30,10 +30,10 @@ func (m mockRepository) Get(slug string) (*model.Shortener, error) {
 }
 
 func (m mockRepository) Update(shortener *model.Shortener, id string) (*model.Shortener, error) {
-	if m.fnUpate == nil {
+	if m.fnUpdate == nil {
 		return nil, nil
 	}
-	return m.fnUpate(shortener, id)
+	return m.fnUpdate(shortener, id)
 }
 
 func (m mockRepository) AddClick(click model.Click, slug string) (*model.Shortener, error) {
@@ -196,7 +196,7 @@ func TestAddClick(t *testing.T) {
 				fnGet: func(slug string) (*model.Shortener, error) {
 					return &model.Shortener{Slug: slugMock}, nil
 				},
-				fnUpate: func(shortener *model.Shortener, id string) (*model.Shortener, error) {
+				fnUpdate: func(shortener *model.Shortener, id string) (*model.Shortener, error) {
 					return shortener, nil
 				},
 			}
@@ -208,4 +208,38 @@ func TestAddClick(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, wantShortener, gotShortener)
 	})
+}
+
+func TestStats(t *testing.T) {
+	slugMock := "SL5G3"
+	clicksMock := []model.Click{
+		{
+			Browser: "chrome",
+		},
+		{
+			Browser: "chrome",
+		},
+		{
+			Browser: "safari",
+		},
+	}
+
+	shortenerRepository = func() repository.Shortener {
+		return &mockRepository{
+			fnGet: func(slug string) (*model.Shortener, error) {
+				return &model.Shortener{
+					Click: clicksMock,
+				}, nil
+			},
+		}
+	}
+
+	shortenerService := New()
+	stats, err := shortenerService.Stats(slugMock)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, stats)
+	assert.Equal(t, len(clicksMock), stats.Clicks)
+	assert.Equal(t, 2, stats.Browsers["chrome"])
+	assert.Equal(t, 1, stats.Browsers["safari"])
 }

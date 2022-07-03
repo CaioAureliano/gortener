@@ -1,6 +1,7 @@
 package service
 
 import (
+	"log"
 	"testing"
 
 	"github.com/CaioAureliano/gortener/internal/shortener/model"
@@ -236,6 +237,8 @@ func TestStats(t *testing.T) {
 
 	shortenerService := New()
 	stats, err := shortenerService.Stats(slugMock)
+
+	log.Printf("%v", stats)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, stats)

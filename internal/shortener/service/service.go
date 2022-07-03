@@ -110,13 +110,14 @@ func (s *shortener) Stats(slug string) (*model.Stats, error) {
 	}
 
 	clicks := shortener.Click
-
 	stats := &model.Stats{}
+
+	stats.Initialize()
+
 	stats.Clicks = len(clicks)
-	stats.Browsers = make(map[string]int)
 
 	for _, c := range clicks {
-		stats.Browsers[c.Browser] += 1
+		stats.IncrementIfExists(c)
 	}
 
 	return stats, nil

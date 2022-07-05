@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"regexp"
@@ -39,10 +40,13 @@ var (
 )
 
 const (
-	slugLength   = 5
-	urlCacheTime = time.Hour * 24 * 8
+	slugLength     = 5
+	urlCacheTime   = time.Hour * 24 * 7
+	statsCacheTime = time.Minute * 10
 
 	regexValidURL = `[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`
+
+	slugStatsKeyCachePrefix = "_stats"
 )
 
 func (s *shortener) Create(url string) (*model.Shortener, error) {
@@ -64,7 +68,7 @@ func (s *shortener) Create(url string) (*model.Shortener, error) {
 		CreatedAt: time.Now(),
 	}
 
-	defer s.CacheUrl(shortToCreate.Slug, shortToCreate.Url)
+	defer s.cacheUrl(shortToCreate.Slug, shortToCreate.Url)
 	createdUrl, err := shortenerRepository().Create(shortToCreate)
 	if err != nil {
 		return nil, err
@@ -100,7 +104,7 @@ func (s *shortener) GetUrl(slug string) (string, error) {
 			return "", ErrShortenerNotFound
 		}
 
-		defer s.CacheUrl(shortener.Slug, shortener.Url)
+		defer s.cacheUrl(shortener.Slug, shortener.Url)
 		return shortener.Url, nil
 	}
 
@@ -127,27 +131,47 @@ func (s *shortener) AddClick(click model.Click, slug string) (*model.Shortener, 
 }
 
 func (s *shortener) Stats(slug string) (*model.Stats, error) {
-	shortener, err := s.Get(slug)
-	if err != nil {
-		return nil, err
+	encodedStatsRes, err := cacheRepository().Get(s.getSlugStatsKey(slug))
+	if err == redis.Nil {
+		shortener, err := s.Get(slug)
+		if err != nil {
+			return nil, err
+		}
+
+		clicks := shortener.Click
+
+		stats := &model.Stats{}
+		stats.Initialize()
+		stats.Clicks = len(clicks)
+
+		for _, c := range clicks {
+			stats.IncrementIfExists(c)
+		}
+
+		encodedStats, err := json.Marshal(stats)
+		if err != nil {
+			return nil, err
+		}
+
+		defer cacheRepository().Set(s.getSlugStatsKey(slug), string(encodedStats), statsCacheTime)
+
+		return stats, nil
 	}
 
-	clicks := shortener.Click
-
-	stats := &model.Stats{}
-	stats.Initialize()
-
-	stats.Clicks = len(clicks)
-
-	for _, c := range clicks {
-		stats.IncrementIfExists(c)
+	var stats *model.Stats
+	if err := json.Unmarshal([]byte(encodedStatsRes), &stats); err != nil {
+		return nil, err
 	}
 
 	return stats, nil
 }
 
-func (s shortener) CacheUrl(slug, url string) {
+func (s shortener) cacheUrl(slug, url string) {
 	if err := cacheRepository().Set(slug, url, urlCacheTime); err != nil {
 		log.Printf("error to cache slug: \"%s\" with url: \"%s\" - error: %s", slug, url, err.Error())
 	}
+}
+
+func (s shortener) getSlugStatsKey(slug string) string {
+	return slug + slugStatsKeyCachePrefix
 }

@@ -1,12 +1,12 @@
 package model
 
 type Stats struct {
-	Clicks    int
-	Sources   map[string]int
-	Devices   map[string]int
-	Browsers  map[string]int
-	Languages map[string]int
-	Systems   map[string]int
+	Clicks    int            `json:"clicks"`
+	Sources   map[string]int `json:"sources"`
+	Devices   map[string]int `json:"devices"`
+	Browsers  map[string]int `json:"browsers"`
+	Languages map[string]int `json:"languages"`
+	Systems   map[string]int `json:"systems"`
 }
 
 func (s *Stats) Initialize() {

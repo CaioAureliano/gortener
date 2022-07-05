@@ -255,35 +255,76 @@ func TestAddClick(t *testing.T) {
 }
 
 func TestStats(t *testing.T) {
-	slugMock := "SL5G3"
-	clicksMock := []model.Click{
-		{
-			Browser: "chrome",
-		},
-		{
-			Browser: "chrome",
-		},
-		{
-			Browser: "safari",
-		},
-	}
-
-	shortenerRepository = func() repository.Shortener {
-		return &mockRepository{
-			fnGet: func(slug string) (*model.Shortener, error) {
-				return &model.Shortener{
-					Click: clicksMock,
-				}, nil
+	t.Run("should be cache a stats", func(t *testing.T) {
+		slugMock := "SL5G3"
+		clicksMock := []model.Click{
+			{
+				Browser: "chrome",
+			},
+			{
+				Browser: "chrome",
+			},
+			{
+				Browser: "safari",
 			},
 		}
-	}
 
-	shortenerService := New()
-	stats, err := shortenerService.Stats(slugMock)
+		shortenerRepository = func() repository.Shortener {
+			return &mockRepository{
+				fnGet: func(slug string) (*model.Shortener, error) {
+					return &model.Shortener{
+						Click: clicksMock,
+					}, nil
+				},
+			}
+		}
 
-	assert.NoError(t, err)
-	assert.NotNil(t, stats)
-	assert.Equal(t, len(clicksMock), stats.Clicks)
-	assert.Equal(t, 2, stats.Browsers["chrome"])
-	assert.Equal(t, 1, stats.Browsers["safari"])
+		clientMock, mock := redismock.NewClientMock()
+		cacheRepository = func() cache.Cache {
+			return NewMockCache(clientMock)
+		}
+
+		keyPrefix := slugMock + slugStatsKeyCachePrefix
+		mock.ExpectGet(keyPrefix).RedisNil()
+		mock.Regexp().ExpectSet(keyPrefix, `[a-z]+`, statsCacheTime).SetVal("")
+
+		shortenerService := New()
+		stats, err := shortenerService.Stats(slugMock)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, stats)
+		assert.Equal(t, len(clicksMock), stats.Clicks)
+		assert.Equal(t, 2, stats.Browsers["chrome"])
+		assert.Equal(t, 1, stats.Browsers["safari"])
+	})
+
+	t.Run("should be get stats cached", func(t *testing.T) {
+		slug := "xyz01"
+		statsEncodedMock := `{
+			"browsers": {
+				"chrome": 10,
+				"safari": 2,
+				"firefox": 5
+			}
+		}`
+
+		shortenerRepository = func() repository.Shortener {
+			return mockRepository{}
+		}
+
+		clientMock, mock := redismock.NewClientMock()
+		cacheRepository = func() cache.Cache {
+			return NewMockCache(clientMock)
+		}
+
+		mock.ExpectGet(slug + slugStatsKeyCachePrefix).SetVal(statsEncodedMock)
+
+		shortenerService := New()
+		res, err := shortenerService.Stats(slug)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 10, res.Browsers["chrome"])
+		assert.Equal(t, 5, res.Browsers["firefox"])
+		assert.Equal(t, 2, res.Browsers["safari"])
+	})
 }

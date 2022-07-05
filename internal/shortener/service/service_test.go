@@ -1,7 +1,6 @@
 package service
 
 import (
-	"log"
 	"testing"
 
 	"github.com/CaioAureliano/gortener/internal/shortener/model"
@@ -173,6 +172,16 @@ func TestGet(t *testing.T) {
 	}
 }
 
+func TestGetUrl(t *testing.T) {
+	slugMock := "SL5G0"
+
+	shortenerService := New()
+	url, err := shortenerService.GetUrl(slugMock)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "http://google.com", url)
+}
+
 func TestAddClick(t *testing.T) {
 	t.Run("should be return shortener with new valid click and slug", func(t *testing.T) {
 
@@ -237,8 +246,6 @@ func TestStats(t *testing.T) {
 
 	shortenerService := New()
 	stats, err := shortenerService.Stats(slugMock)
-
-	log.Printf("%v", stats)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, stats)

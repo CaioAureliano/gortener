@@ -9,12 +9,15 @@ import (
 
 	"github.com/CaioAureliano/gortener/internal/shortener/model"
 	"github.com/CaioAureliano/gortener/internal/shortener/repository"
+	"github.com/CaioAureliano/gortener/internal/shortener/repository/cache"
+	"github.com/go-redis/redis/v9"
 	"github.com/snapcore/snapd/randutil"
 )
 
 type Shortener interface {
 	Create(url string) (*model.Shortener, error)
 	Get(slug string) (*model.Shortener, error)
+	GetUrl(slug string) (string, error)
 	AddClick(click model.Click, slug string) (*model.Shortener, error)
 	Stats(slug string) (*model.Stats, error)
 }
@@ -32,10 +35,12 @@ var (
 	ErrShortenerNotFound = errors.New("not found short URL")
 
 	shortenerRepository = repository.New
+	cacheRepository     = cache.New
 )
 
 const (
-	slugLength = 5
+	slugLength   = 5
+	urlCacheTime = time.Hour * 24 * 30
 
 	regexValidURL = `[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`
 )
@@ -59,8 +64,8 @@ func (s *shortener) Create(url string) (*model.Shortener, error) {
 		CreatedAt: time.Now(),
 	}
 
+	defer s.CacheUrl(shortToCreate.Slug, shortToCreate.Url)
 	createdUrl, err := shortenerRepository().Create(shortToCreate)
-
 	if err != nil {
 		return nil, err
 	}
@@ -75,13 +80,31 @@ func (s *shortener) Get(slug string) (*model.Shortener, error) {
 		return nil, ErrInvalidSlug
 	}
 
-	shortUrl, err := shortenerRepository().Get(slug)
+	res, err := shortenerRepository().Get(slug)
 	if err != nil {
 		log.Printf("shortener not found with slug %s - error: %s", slug, err.Error())
 		return nil, ErrShortenerNotFound
 	}
 
-	return shortUrl, nil
+	return res, nil
+}
+
+func (s *shortener) GetUrl(slug string) (string, error) {
+	res, err := cacheRepository().Get(slug)
+	if err == redis.Nil {
+		log.Printf("not found url from slug: \"%s\" in cache", slug)
+
+		shortener, err := s.Get(slug)
+		if err != nil {
+			return "", err
+		}
+
+		defer s.CacheUrl(shortener.Slug, shortener.Url)
+
+		return shortener.Url, err
+	}
+
+	return res, nil
 }
 
 func (s *shortener) AddClick(click model.Click, slug string) (*model.Shortener, error) {
@@ -104,14 +127,14 @@ func (s *shortener) AddClick(click model.Click, slug string) (*model.Shortener, 
 }
 
 func (s *shortener) Stats(slug string) (*model.Stats, error) {
-	shortener, err := shortenerRepository().Get(slug)
+	shortener, err := s.Get(slug)
 	if err != nil {
 		return nil, err
 	}
 
 	clicks := shortener.Click
-	stats := &model.Stats{}
 
+	stats := &model.Stats{}
 	stats.Initialize()
 
 	stats.Clicks = len(clicks)
@@ -121,4 +144,8 @@ func (s *shortener) Stats(slug string) (*model.Stats, error) {
 	}
 
 	return stats, nil
+}
+
+func (s shortener) CacheUrl(slug, url string) {
+	cacheRepository().Set(slug, url, urlCacheTime)
 }

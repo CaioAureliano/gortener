@@ -5,11 +5,11 @@ import (
 	"time"
 
 	cacheRedis "github.com/CaioAureliano/gortener/pkg/cache"
-	"github.com/go-redis/redis/v9"
+	"github.com/go-redis/redis/v8"
 )
 
 type Cache interface {
-	Set(key, value string, duration time.Duration)
+	Set(key, value string, duration time.Duration) error
 	Get(key string) (string, error)
 }
 
@@ -25,8 +25,8 @@ func New() Cache {
 	}
 }
 
-func (c cache) Set(key, value string, duration time.Duration) {
-	c.client.Set(c.ctx, key, value, duration)
+func (c cache) Set(key, value string, duration time.Duration) error {
+	return c.client.Set(c.ctx, key, value, duration).Err()
 }
 
 func (c cache) Get(key string) (string, error) {

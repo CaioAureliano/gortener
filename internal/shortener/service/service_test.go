@@ -1,47 +1,15 @@
 package service
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/CaioAureliano/gortener/internal/shortener/model"
 	"github.com/CaioAureliano/gortener/internal/shortener/repository"
+	"github.com/CaioAureliano/gortener/internal/shortener/repository/cache"
+	"github.com/go-redis/redismock/v8"
 	"github.com/stretchr/testify/assert"
 )
-
-type mockRepository struct {
-	fnCreate   func(shortener *model.Shortener) (*model.Shortener, error)
-	fnGet      func(slug string) (*model.Shortener, error)
-	fnUpdate   func(shortener *model.Shortener, id string) (*model.Shortener, error)
-	fnAddClick func(click model.Click, id string) (*model.Shortener, error)
-}
-
-func (m mockRepository) Create(shortener *model.Shortener) (*model.Shortener, error) {
-	if m.fnCreate == nil {
-		return nil, nil
-	}
-	return m.fnCreate(shortener)
-}
-
-func (m mockRepository) Get(slug string) (*model.Shortener, error) {
-	if m.fnGet == nil {
-		return nil, nil
-	}
-	return m.fnGet(slug)
-}
-
-func (m mockRepository) Update(shortener *model.Shortener, id string) (*model.Shortener, error) {
-	if m.fnUpdate == nil {
-		return nil, nil
-	}
-	return m.fnUpdate(shortener, id)
-}
-
-func (m mockRepository) AddClick(click model.Click, slug string) (*model.Shortener, error) {
-	if m.fnAddClick == nil {
-		return nil, nil
-	}
-	return m.fnAddClick(click, slug)
-}
 
 func TestCreate(t *testing.T) {
 
@@ -173,13 +141,68 @@ func TestGet(t *testing.T) {
 }
 
 func TestGetUrl(t *testing.T) {
-	slugMock := "SL5G0"
+	redisClient, mock := redismock.NewClientMock()
+	cacheRepository = func() cache.Cache {
+		return NewMockCache(redisClient)
+	}
 
-	shortenerService := New()
-	url, err := shortenerService.GetUrl(slugMock)
+	t.Run("should be return url from cache with valid slug", func(t *testing.T) {
+		slugMock := "SL5G0"
+		expectedUrl := "http://example.com"
 
-	assert.NoError(t, err)
-	assert.Equal(t, "http://google.com", url)
+		mock.ExpectGet(slugMock).SetVal(expectedUrl)
+
+		shortenerService := New()
+		url, err := shortenerService.GetUrl(slugMock)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedUrl, url)
+	})
+
+	t.Run("should be return url from database with valid slug and cache url", func(t *testing.T) {
+		slugMock := "zxy01"
+		expectedUrl := "http://example.com"
+
+		mock.ExpectGet(slugMock).RedisNil()
+		mock.ExpectSet(slugMock, expectedUrl, urlCacheTime).SetVal(expectedUrl)
+
+		shortenerRepository = func() repository.Shortener {
+			return mockRepository{
+				fnGet: func(slug string) (*model.Shortener, error) {
+					return &model.Shortener{
+						Slug: slugMock,
+						Url:  expectedUrl,
+					}, nil
+				},
+			}
+		}
+
+		shortenerService := New()
+		url, err := shortenerService.GetUrl(slugMock)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedUrl, url)
+	})
+
+	t.Run("should be return error from invalid slug and not exists shortener", func(t *testing.T) {
+		slugMock := "abcX0"
+
+		mock.ExpectGet(slugMock).RedisNil()
+
+		shortenerRepository = func() repository.Shortener {
+			return mockRepository{
+				fnGet: func(slug string) (*model.Shortener, error) {
+					return nil, errors.New("")
+				},
+			}
+		}
+
+		shortenerService := New()
+		url, err := shortenerService.GetUrl(slugMock)
+
+		assert.Empty(t, url)
+		assert.EqualError(t, err, ErrShortenerNotFound.Error())
+	})
 }
 
 func TestAddClick(t *testing.T) {

@@ -10,7 +10,7 @@ import (
 	"github.com/CaioAureliano/gortener/internal/shortener/model"
 	"github.com/CaioAureliano/gortener/internal/shortener/repository"
 	"github.com/CaioAureliano/gortener/internal/shortener/repository/cache"
-	"github.com/go-redis/redis/v9"
+	"github.com/go-redis/redis/v8"
 	"github.com/snapcore/snapd/randutil"
 )
 
@@ -40,7 +40,7 @@ var (
 
 const (
 	slugLength   = 5
-	urlCacheTime = time.Hour * 24 * 30
+	urlCacheTime = time.Hour * 24 * 8
 
 	regexValidURL = `[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`
 )
@@ -92,16 +92,16 @@ func (s *shortener) Get(slug string) (*model.Shortener, error) {
 func (s *shortener) GetUrl(slug string) (string, error) {
 	res, err := cacheRepository().Get(slug)
 	if err == redis.Nil {
-		log.Printf("not found url from slug: \"%s\" in cache", slug)
+
+		log.Printf("not found url from slug: \"%s\" in cache - error: %v", slug, err)
 
 		shortener, err := s.Get(slug)
-		if err != nil {
-			return "", err
+		if err != nil || shortener == nil {
+			return "", ErrShortenerNotFound
 		}
 
 		defer s.CacheUrl(shortener.Slug, shortener.Url)
-
-		return shortener.Url, err
+		return shortener.Url, nil
 	}
 
 	return res, nil
@@ -147,5 +147,7 @@ func (s *shortener) Stats(slug string) (*model.Stats, error) {
 }
 
 func (s shortener) CacheUrl(slug, url string) {
-	cacheRepository().Set(slug, url, urlCacheTime)
+	if err := cacheRepository().Set(slug, url, urlCacheTime); err != nil {
+		log.Printf("error to cache slug: \"%s\" with url: \"%s\" - error: %s", slug, url, err.Error())
+	}
 }

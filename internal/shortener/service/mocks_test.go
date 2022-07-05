@@ -47,6 +47,8 @@ func (m mockRepository) AddClick(click model.Click, slug string) (*model.Shorten
 type mockCache struct {
 	ctx    context.Context
 	client *redis.Client
+
+	fnSet func(key, value string, duration time.Duration) error
 }
 
 func NewMockCache(client *redis.Client) cache.Cache {
@@ -57,6 +59,9 @@ func NewMockCache(client *redis.Client) cache.Cache {
 }
 
 func (c mockCache) Set(key, value string, duration time.Duration) error {
+	if c.fnSet != nil {
+		return c.fnSet(key, value, duration)
+	}
 	return c.client.Set(c.ctx, key, value, duration).Err()
 }
 

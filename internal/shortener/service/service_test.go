@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/CaioAureliano/gortener/internal/shortener/model"
 	"github.com/CaioAureliano/gortener/internal/shortener/repository"
@@ -12,9 +13,19 @@ import (
 )
 
 func TestCreate(t *testing.T) {
+	mockRedisCache := make(map[string]interface{})
+	cacheRepository = func() cache.Cache {
+		return mockCache{
+			fnSet: func(key, value string, duration time.Duration) error {
+				mockRedisCache[key] = value
+				return nil
+			},
+		}
+	}
 
-	t.Run("model response", func(t *testing.T) {
+	t.Run("should be return model response with valid properties values", func(t *testing.T) {
 		mockUrl := "www.google.com"
+		expectedUrl := "http://" + mockUrl
 
 		shortenerRepository = func() repository.Shortener {
 			return mockRepository{
@@ -32,7 +43,7 @@ func TestCreate(t *testing.T) {
 		}
 
 		assert.NoError(t, err)
-		assert.Equal(t, "http://"+mockUrl, shortCreated.Url)
+		assert.Equal(t, expectedUrl, shortCreated.Url)
 		assert.Equal(t, slugLength, len([]byte(shortCreated.Slug)))
 	})
 

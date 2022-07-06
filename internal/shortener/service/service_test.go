@@ -291,11 +291,11 @@ func TestStats(t *testing.T) {
 		shortenerService := New()
 		stats, err := shortenerService.Stats(slugMock)
 
-		assert.NoError(t, err)
-		assert.NotNil(t, stats)
-		assert.Equal(t, len(clicksMock), stats.Clicks)
-		assert.Equal(t, 2, stats.Browsers["chrome"])
-		assert.Equal(t, 1, stats.Browsers["safari"])
+		if assert.NoError(t, err) && assert.NotNil(t, stats) {
+			assert.Equal(t, len(clicksMock), stats.Clicks)
+			assert.Equal(t, 2, stats.Browsers["chrome"])
+			assert.Equal(t, 1, stats.Browsers["safari"])
+		}
 	})
 
 	t.Run("should be get stats cached", func(t *testing.T) {
@@ -322,9 +322,10 @@ func TestStats(t *testing.T) {
 		shortenerService := New()
 		res, err := shortenerService.Stats(slug)
 
-		assert.NoError(t, err)
-		assert.Equal(t, 10, res.Browsers["chrome"])
-		assert.Equal(t, 5, res.Browsers["firefox"])
-		assert.Equal(t, 2, res.Browsers["safari"])
+		if assert.NoError(t, err) && assert.NotNil(t, res) {
+			assert.Equal(t, 10, res.Browsers["chrome"])
+			assert.Equal(t, 5, res.Browsers["firefox"])
+			assert.Equal(t, 2, res.Browsers["safari"])
+		}
 	})
 }

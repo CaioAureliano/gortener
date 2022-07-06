@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
@@ -12,13 +13,20 @@ import (
 
 var (
 	shortenerService = service.New
+
+	ErrBadRequestUrl = errors.New("bad request: invalid url")
 )
 
 func CreateShortUrl(c echo.Context) error {
-	var req *dto.UrlRequest
-	if err := c.Bind(&req); err != nil || req == nil {
+	req := new(dto.UrlRequest)
+	if err := c.Bind(req); err != nil {
 		log.Printf("error to bind body request: %s", err.Error())
-		return echo.NewHTTPError(http.StatusBadRequest, "bad request: not found url")
+		return echo.NewHTTPError(http.StatusBadRequest, ErrBadRequestUrl)
+	}
+
+	if err := c.Validate(req); err != nil {
+		log.Printf("error to validate request URL (%s)", err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, ErrBadRequestUrl)
 	}
 
 	res, err := shortenerService().Create(req)

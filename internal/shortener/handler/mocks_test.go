@@ -1,8 +1,12 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/CaioAureliano/gortener/internal/shortener/dto"
 	"github.com/CaioAureliano/gortener/internal/shortener/model"
+	"github.com/go-playground/validator/v10"
+	"github.com/labstack/echo/v4"
 )
 
 type mockService struct {
@@ -34,4 +38,16 @@ func (m mockService) AddClick(click model.Click, slug string) (*model.Shortener,
 
 func (m mockService) Stats(slug string) (*model.Stats, error) {
 	return nil, nil
+}
+
+type CustomValidatorMock struct {
+	validator *validator.Validate
+}
+
+func (c *CustomValidatorMock) Validate(i interface{}) error {
+	if err := c.validator.Struct(i); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	return nil
 }

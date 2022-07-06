@@ -9,39 +9,90 @@ import (
 	"github.com/CaioAureliano/gortener/internal/shortener/dto"
 	"github.com/CaioAureliano/gortener/internal/shortener/model"
 	"github.com/CaioAureliano/gortener/internal/shortener/service"
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateShortUrl(t *testing.T) {
-	body := `{"url": "example.com"}`
+	tests := []struct {
+		name    string
+		request string
 
-	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+		serviceMock service.Shortener
 
-	e := echo.New()
+		wantStatusCode   int
+		wantSlugLocation string
+		wantErr          assert.ErrorAssertionFunc
+	}{
+		{
+			name:    "should be return created status with valid request body",
+			request: `{"url": "example.com"}`,
 
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	slugMock := "sl8g3"
-	shortenerService = func() service.Shortener {
-		return mockService{
-			fnCreate: func(req *dto.UrlRequest) (*model.Shortener, error) {
-				req.AppendProtocolIfNotExists()
-				return &model.Shortener{
-					Url:  req.Url,
-					Slug: slugMock,
-				}, nil
+			serviceMock: mockService{
+				fnCreate: func(req *dto.UrlRequest) (*model.Shortener, error) {
+					req.AppendProtocolIfNotExists()
+					return &model.Shortener{
+						Url:  req.Url,
+						Slug: "sl8g3",
+					}, nil
+				},
 			},
-		}
+
+			wantStatusCode:   http.StatusCreated,
+			wantSlugLocation: "sl8g3",
+			wantErr:          assert.NoError,
+		},
+		{
+			name:    "should be return bad request status with invalid request body",
+			request: `{}`,
+
+			serviceMock: mockService{},
+
+			wantStatusCode:   http.StatusBadRequest,
+			wantSlugLocation: "",
+			wantErr:          assert.Error,
+		},
+		{
+			name:    "should be return bad request status with invalid request body",
+			request: `{"url": ""}`,
+
+			serviceMock: mockService{},
+
+			wantStatusCode:   http.StatusBadRequest,
+			wantSlugLocation: "",
+			wantErr:          assert.Error,
+		},
 	}
 
-	err := CreateShortUrl(c)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := echo.New()
+			e.Validator = &CustomValidatorMock{validator: validator.New()}
 
-	if assert.NoError(t, err) {
-		assert.Equal(t, http.StatusCreated, rec.Code)
-		assert.Equal(t, echo.MIMEApplicationJSONCharsetUTF8, rec.Header()[echo.HeaderContentType][0])
-		assert.Equal(t, "/"+slugMock, rec.Header()[echo.HeaderLocation][0])
+			req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(tt.request))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+			rec := httptest.NewRecorder()
+			ctx := e.NewContext(req, rec)
+
+			shortenerService = func() service.Shortener {
+				return tt.serviceMock
+			}
+
+			err := CreateShortUrl(ctx)
+
+			tt.wantErr(t, err)
+			if tt.wantStatusCode == http.StatusCreated {
+				assert.Equal(t, tt.wantStatusCode, rec.Code)
+			} else {
+				httpErr, ok := err.(*echo.HTTPError)
+				assert.True(t, ok)
+				assert.Equal(t, tt.wantStatusCode, httpErr.Code)
+			}
+
+			if tt.wantSlugLocation != "" {
+				assert.Equal(t, "/"+tt.wantSlugLocation, rec.Header()[echo.HeaderLocation][0])
+			}
+		})
 	}
 }

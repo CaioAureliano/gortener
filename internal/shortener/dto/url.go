@@ -6,7 +6,7 @@ import (
 )
 
 type UrlRequest struct {
-	Url string `json:"url"`
+	Url string `json:"url" validate:"required"`
 }
 
 const (

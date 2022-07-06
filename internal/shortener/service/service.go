@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"regexp"
-	"strings"
 	"time"
 
+	"github.com/CaioAureliano/gortener/internal/shortener/dto"
 	"github.com/CaioAureliano/gortener/internal/shortener/model"
 	"github.com/CaioAureliano/gortener/internal/shortener/repository"
 	"github.com/CaioAureliano/gortener/internal/shortener/repository/cache"
@@ -16,7 +15,7 @@ import (
 )
 
 type Shortener interface {
-	Create(url string) (*model.Shortener, error)
+	Create(url *dto.UrlRequest) (*model.Shortener, error)
 	Get(slug string) (*model.Shortener, error)
 	GetUrl(slug string) (string, error)
 	AddClick(click model.Click, slug string) (*model.Shortener, error)
@@ -44,26 +43,20 @@ const (
 	urlCacheTime   = time.Hour * 24 * 7
 	statsCacheTime = time.Minute * 10
 
-	regexValidURL = `[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`
-
 	slugStatsKeyCachePrefix = "_stats"
 )
 
-func (s *shortener) Create(url string) (*model.Shortener, error) {
-	isValid, err := regexp.MatchString(regexValidURL, url)
-	if err != nil || !isValid {
-		log.Printf("invalid url: %s", url)
+func (s *shortener) Create(req *dto.UrlRequest) (*model.Shortener, error) {
+	if req == nil || !req.IsValid() {
 		return nil, ErrInvalidURL
 	}
 
-	if !strings.Contains(url, "http") {
-		url = "http://" + url
-	}
+	req.AppendProtocolIfNotExists()
 
 	slug := randutil.RandomString(slugLength)
 
 	shortToCreate := &model.Shortener{
-		Url:       url,
+		Url:       req.Url,
 		Slug:      slug,
 		CreatedAt: time.Now(),
 	}

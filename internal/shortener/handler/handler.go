@@ -21,7 +21,7 @@ func CreateShortUrl(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "bad request: not found url")
 	}
 
-	res, err := shortenerService().Create(req.Url)
+	res, err := shortenerService().Create(req)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}

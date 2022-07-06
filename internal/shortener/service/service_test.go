@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/CaioAureliano/gortener/internal/shortener/dto"
 	"github.com/CaioAureliano/gortener/internal/shortener/model"
 	"github.com/CaioAureliano/gortener/internal/shortener/repository"
 	"github.com/CaioAureliano/gortener/internal/shortener/repository/cache"
@@ -24,8 +25,8 @@ func TestCreate(t *testing.T) {
 	}
 
 	t.Run("should be return model response with valid properties values", func(t *testing.T) {
-		mockUrl := "www.google.com"
-		expectedUrl := "http://" + mockUrl
+		mockUrl := &dto.UrlRequest{Url: "www.google.com"}
+		expectedUrl := "http://" + mockUrl.Url
 
 		shortenerRepository = func() repository.Shortener {
 			return mockRepository{
@@ -50,14 +51,14 @@ func TestCreate(t *testing.T) {
 	t.Run("URL create", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			gotUrl   string
+			gotUrl   *dto.UrlRequest
 			wantUrl  string
 			wantErr  error
 			repoMock repository.Shortener
 		}{
 			{
 				name:    "should be return a shortener created with valid URL",
-				gotUrl:  "google.com",
+				gotUrl:  &dto.UrlRequest{Url: "google.com"},
 				wantUrl: "http://google.com",
 				wantErr: nil,
 				repoMock: mockRepository{
@@ -68,7 +69,7 @@ func TestCreate(t *testing.T) {
 			},
 			{
 				name:    "should be return ErrInvalidURL with invalid URL",
-				gotUrl:  "url",
+				gotUrl:  nil,
 				wantUrl: "",
 				wantErr: ErrInvalidURL,
 				repoMock: mockRepository{

@@ -39,3 +39,7 @@ func CreateShortUrl(c echo.Context) error {
 	c.Response().WriteHeader(http.StatusCreated)
 	return json.NewEncoder(c.Response()).Encode(res)
 }
+
+func Redirect(c echo.Context) error {
+	return nil
+}

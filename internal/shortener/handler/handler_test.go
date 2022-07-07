@@ -96,3 +96,23 @@ func TestCreateShortUrl(t *testing.T) {
 		})
 	}
 }
+
+func TestRedirect(t *testing.T) {
+	slug := "sl5g3"
+
+	e := echo.New()
+
+	req := httptest.NewRequest(http.MethodGet, "/"+slug, nil)
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	shortenerService = func() service.Shortener {
+		return nil
+	}
+
+	err := Redirect(ctx)
+
+	if assert.NoError(t, err) {
+		assert.Equal(t, http.StatusMovedPermanently, rec.Code)
+	}
+}

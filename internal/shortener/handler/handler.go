@@ -41,5 +41,16 @@ func CreateShortUrl(c echo.Context) error {
 }
 
 func Redirect(c echo.Context) error {
-	return nil
+	slug := c.Param("slug")
+
+	url, err := shortenerService().GetUrl(slug)
+	if err != nil {
+		log.Printf("error to find url by slug: %s [%s]", slug, err.Error())
+		return echo.NewHTTPError(http.StatusNotFound, "not found: "+err.Error())
+	}
+
+	clicked := new(dto.ClickedRequest)
+	defer shortenerService().AddClick(clicked.Set(c.Request()), slug)
+
+	return c.Redirect(http.StatusMovedPermanently, url)
 }

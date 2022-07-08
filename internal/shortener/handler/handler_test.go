@@ -98,21 +98,31 @@ func TestCreateShortUrl(t *testing.T) {
 }
 
 func TestRedirect(t *testing.T) {
-	slug := "sl5g3"
+	gotSlug := "sl5g3"
+	wantUrl := "http://example.com"
 
 	e := echo.New()
 
-	req := httptest.NewRequest(http.MethodGet, "/"+slug, nil)
+	req := httptest.NewRequest(http.MethodGet, "/"+gotSlug, nil)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+	req.Header.Set("User-Agent", `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36`)
+	req.Header.Set("Accept-Language", `en-US,en;q=0.5`)
+
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
 
 	shortenerService = func() service.Shortener {
-		return nil
+		return mockService{
+			fnGetUrl: func(slug string) (string, error) {
+				return wantUrl, nil
+			},
+		}
 	}
 
 	err := Redirect(ctx)
 
 	if assert.NoError(t, err) {
 		assert.Equal(t, http.StatusMovedPermanently, rec.Code)
+		assert.Equal(t, wantUrl, rec.Header()[echo.HeaderLocation][0])
 	}
 }

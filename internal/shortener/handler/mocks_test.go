@@ -29,10 +29,16 @@ func (m mockService) Get(slug string) (*model.Shortener, error) {
 }
 
 func (m mockService) GetUrl(slug string) (string, error) {
+	if m.fnGetUrl != nil {
+		return m.fnGetUrl(slug)
+	}
 	return "", nil
 }
 
 func (m mockService) AddClick(click model.Click, slug string) (*model.Shortener, error) {
+	if m.fnAddClick != nil {
+		return m.fnAddClick(click, slug)
+	}
 	return nil, nil
 }
 

@@ -98,31 +98,84 @@ func TestCreateShortUrl(t *testing.T) {
 }
 
 func TestRedirect(t *testing.T) {
-	gotSlug := "sl5g3"
-	wantUrl := "http://example.com"
+	tests := []struct {
+		name       string
+		gotRequest *http.Request
 
-	e := echo.New()
+		wantUrl    string
+		wantStatus int
+		wantErr    assert.ErrorAssertionFunc
 
-	req := httptest.NewRequest(http.MethodGet, "/"+gotSlug, nil)
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
-	req.Header.Set("User-Agent", `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36`)
-	req.Header.Set("Accept-Language", `en-US,en;q=0.5`)
+		mockService service.Shortener
+	}{
+		{
+			name: "should be redirect to url with valid slug with moved permanently http status code",
 
-	rec := httptest.NewRecorder()
-	ctx := e.NewContext(req, rec)
+			gotRequest: func() *http.Request {
+				req := httptest.NewRequest(http.MethodGet, "/", nil)
+				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+				req.Header.Set("User-Agent", `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36`)
+				req.Header.Set("Accept-Language", `en-US,en;q=0.5`)
+				return req
+			}(),
 
-	shortenerService = func() service.Shortener {
-		return mockService{
-			fnGetUrl: func(slug string) (string, error) {
-				return wantUrl, nil
+			wantUrl:    "http://example.com",
+			wantStatus: http.StatusMovedPermanently,
+			wantErr:    assert.NoError,
+
+			mockService: mockService{
+				fnGetUrl: func(slug string) (string, error) {
+					return "http://example.com", nil
+				},
 			},
-		}
+		},
+		{
+			name: "should be return not found http status code with invalid slug",
+
+			gotRequest: func() *http.Request {
+				req := httptest.NewRequest(http.MethodGet, "/", nil)
+				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+				req.Header.Set("User-Agent", `Mozilla/5.0 (Macintosh; Intel Mac OS X x.y; rv:42.0) Gecko/20100101 Firefox/42.0`)
+				req.Header.Set("Accept-Language", `en-US,en;q=0.5`)
+				return req
+			}(),
+
+			wantUrl:    "",
+			wantStatus: http.StatusNotFound,
+			wantErr:    assert.Error,
+
+			mockService: mockService{
+				fnGetUrl: func(slug string) (string, error) {
+					return "", assert.AnError
+				},
+			},
+		},
 	}
 
-	err := Redirect(ctx)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := echo.New()
 
-	if assert.NoError(t, err) {
-		assert.Equal(t, http.StatusMovedPermanently, rec.Code)
-		assert.Equal(t, wantUrl, rec.Header()[echo.HeaderLocation][0])
+			rec := httptest.NewRecorder()
+			ctx := e.NewContext(tt.gotRequest, rec)
+
+			shortenerService = func() service.Shortener {
+				return tt.mockService
+			}
+
+			err := Redirect(ctx)
+
+			tt.wantErr(t, err)
+
+			if tt.wantStatus == http.StatusMovedPermanently {
+				assert.Equal(t, tt.wantStatus, rec.Code)
+				assert.Equal(t, tt.wantUrl, rec.Header()[echo.HeaderLocation][0])
+			} else {
+				httpErr, ok := err.(*echo.HTTPError)
+
+				assert.True(t, ok)
+				assert.Equal(t, tt.wantStatus, httpErr.Code)
+			}
+		})
 	}
 }

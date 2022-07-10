@@ -69,7 +69,8 @@ func Stats(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, echo.Map{
-		"shortener": short,
-		"stats":     stats,
+		"stats":      stats,
+		"url":        short.Url,
+		"created_at": short.CreatedAt,
 	})
 }

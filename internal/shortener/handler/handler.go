@@ -54,3 +54,7 @@ func Redirect(c echo.Context) error {
 
 	return c.Redirect(http.StatusMovedPermanently, url)
 }
+
+func Stats(c echo.Context) error {
+	return nil
+}

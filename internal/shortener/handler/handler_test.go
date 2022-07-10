@@ -179,3 +179,17 @@ func TestRedirect(t *testing.T) {
 		})
 	}
 }
+
+func TestStats(t *testing.T) {
+	e := echo.New()
+
+	req := httptest.NewRequest(http.MethodGet, "/sl0g3/stats", nil)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	err := Stats(ctx)
+
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Code)
+}

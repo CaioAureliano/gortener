@@ -56,5 +56,20 @@ func Redirect(c echo.Context) error {
 }
 
 func Stats(c echo.Context) error {
-	return nil
+	slug := c.Param("slug")
+
+	stats, err := shortenerService().Stats(slug)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	short, err := shortenerService().Get(slug)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"shortener": short,
+		"stats":     stats,
+	})
 }

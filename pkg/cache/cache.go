@@ -1,17 +1,17 @@
 package cache
 
 import (
+	"os"
+
 	"github.com/go-redis/redis/v8"
 )
 
 var (
-	addr = "localhost:6379"
+	addr = os.Getenv("REDIS_URI")
 )
 
 func Client() *redis.Client {
 	return redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: "",
-		DB:       0,
+		Addr: addr,
 	})
 }

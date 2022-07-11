@@ -11,10 +11,10 @@ import (
 
 var (
 	connection_url = os.Getenv("MONGO_URI")
-	db_name        = os.Getenv("DB_NAME")
+	db_name        = os.Getenv("MONGO_DB_NAME")
 )
 
-func ConnectDatabase() *mongo.Database {
+func Connect() *mongo.Database {
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(connection_url))
 	if err != nil {
 		log.Fatalf("error to connect to database: %s", err.Error())

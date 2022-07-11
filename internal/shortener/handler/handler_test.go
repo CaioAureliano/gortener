@@ -23,9 +23,8 @@ func TestCreateShortUrl(t *testing.T) {
 
 		serviceMock service.Shortener
 
-		wantStatusCode   int
-		wantSlugLocation string
-		wantErr          assert.ErrorAssertionFunc
+		wantStatusCode int
+		wantErr        assert.ErrorAssertionFunc
 	}{
 		{
 			name:    "should be return created status with valid request body",
@@ -41,9 +40,8 @@ func TestCreateShortUrl(t *testing.T) {
 				},
 			},
 
-			wantStatusCode:   http.StatusCreated,
-			wantSlugLocation: "sl8g3",
-			wantErr:          assert.NoError,
+			wantStatusCode: http.StatusCreated,
+			wantErr:        assert.NoError,
 		},
 		{
 			name:    "should be return bad request status with invalid request body",
@@ -51,9 +49,8 @@ func TestCreateShortUrl(t *testing.T) {
 
 			serviceMock: mockService{},
 
-			wantStatusCode:   http.StatusBadRequest,
-			wantSlugLocation: "",
-			wantErr:          assert.Error,
+			wantStatusCode: http.StatusBadRequest,
+			wantErr:        assert.Error,
 		},
 		{
 			name:    "should be return bad request status with invalid request body",
@@ -61,9 +58,8 @@ func TestCreateShortUrl(t *testing.T) {
 
 			serviceMock: mockService{},
 
-			wantStatusCode:   http.StatusBadRequest,
-			wantSlugLocation: "",
-			wantErr:          assert.Error,
+			wantStatusCode: http.StatusBadRequest,
+			wantErr:        assert.Error,
 		},
 	}
 
@@ -90,10 +86,6 @@ func TestCreateShortUrl(t *testing.T) {
 				httpErr, ok := err.(*echo.HTTPError)
 				assert.True(t, ok)
 				assert.Equal(t, tt.wantStatusCode, httpErr.Code)
-			}
-
-			if tt.wantSlugLocation != "" {
-				assert.Equal(t, "/"+tt.wantSlugLocation, rec.Header()[echo.HeaderLocation][0])
 			}
 		})
 	}

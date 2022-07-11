@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -34,10 +33,7 @@ func CreateShortUrl(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
-	c.Response().Header().Set(echo.HeaderLocation, "/"+res.Slug)
-	c.Response().WriteHeader(http.StatusCreated)
-	return json.NewEncoder(c.Response()).Encode(res)
+	return c.JSON(http.StatusCreated, res)
 }
 
 func Redirect(c echo.Context) error {
@@ -60,12 +56,14 @@ func Stats(c echo.Context) error {
 
 	stats, err := shortenerService().Stats(slug)
 	if err != nil {
+		log.Printf("error to find stats with slug: %s [%s]", slug, err.Error())
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
 	short, err := shortenerService().Get(slug)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	if err != nil || short == nil {
+		log.Printf("stats - error to find shortener with slug: %s [%v]", slug, err)
+		return echo.NewHTTPError(http.StatusNotFound, "not found: shortener")
 	}
 
 	return c.JSON(http.StatusOK, echo.Map{

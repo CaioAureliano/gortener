@@ -25,6 +25,9 @@ func (m mockService) Create(req *dto.UrlRequest) (*model.Shortener, error) {
 }
 
 func (m mockService) Get(slug string) (*model.Shortener, error) {
+	if m.fnGet != nil {
+		return m.fnGet(slug)
+	}
 	return nil, nil
 }
 
@@ -43,6 +46,9 @@ func (m mockService) AddClick(click model.Click, slug string) (*model.Shortener,
 }
 
 func (m mockService) Stats(slug string) (*model.Stats, error) {
+	if m.fnStats != nil {
+		return m.fnStats(slug)
+	}
 	return nil, nil
 }
 

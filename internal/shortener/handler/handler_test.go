@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/CaioAureliano/gortener/internal/shortener/dto"
 	"github.com/CaioAureliano/gortener/internal/shortener/model"
@@ -181,15 +183,86 @@ func TestRedirect(t *testing.T) {
 }
 
 func TestStats(t *testing.T) {
-	e := echo.New()
 
-	req := httptest.NewRequest(http.MethodGet, "/sl0g3/stats", nil)
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
-	rec := httptest.NewRecorder()
-	ctx := e.NewContext(req, rec)
+	tests := []struct {
+		name string
 
-	err := Stats(ctx)
+		wantStatus int
+		wantErr    assert.ErrorAssertionFunc
 
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
+		gotStatsResponse *model.Stats
+		gotStatsErr      error
+
+		gotShortResponse *model.Shortener
+		gotShortErr      error
+	}{
+		{
+			name: "should be return OK status with valid slug",
+
+			wantStatus: http.StatusOK,
+			wantErr:    assert.NoError,
+
+			gotStatsResponse: &model.Stats{
+				Clicks:   10,
+				Browsers: map[string]int{"chrome": 5},
+			},
+			gotShortResponse: &model.Shortener{
+				Url:       "http://example.com",
+				CreatedAt: time.Now(),
+			},
+		},
+		{
+			name: "should be return not found status with invalid slug",
+
+			wantStatus: http.StatusNotFound,
+			wantErr:    assert.Error,
+
+			gotShortErr: service.ErrShortenerNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := echo.New()
+
+			req := httptest.NewRequest(http.MethodGet, "/sl0g3/stats", nil)
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+			rec := httptest.NewRecorder()
+			ctx := e.NewContext(req, rec)
+
+			shortenerService = func() service.Shortener {
+				return mockService{
+					fnStats: func(slug string) (*model.Stats, error) {
+						return tt.gotStatsResponse, tt.gotStatsErr
+					},
+					fnGet: func(slug string) (*model.Shortener, error) {
+						return tt.gotShortResponse, tt.gotShortErr
+					},
+				}
+			}
+
+			err := Stats(ctx)
+
+			tt.wantErr(t, err)
+
+			if tt.wantStatus != http.StatusOK {
+				httpErr, ok := err.(*echo.HTTPError)
+				assert.True(t, ok)
+				assert.Equal(t, tt.wantStatus, httpErr.Code)
+			} else {
+				body := map[string]interface{}{
+					"stats":      tt.gotStatsResponse,
+					"url":        tt.gotShortResponse.Url,
+					"created_at": tt.gotShortResponse.CreatedAt,
+				}
+
+				expected, err := json.Marshal(body)
+				res := strings.TrimSpace(rec.Body.String())
+
+				assert.NoError(t, err)
+				assert.Equal(t, tt.wantStatus, rec.Code)
+				assert.Equal(t, string(expected), res)
+			}
+		})
+	}
 }

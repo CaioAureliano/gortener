@@ -7,12 +7,14 @@ services:
     environment:
       - PORT=${PORT}
       - MONGO_URI=mongodb://mongo:27017
-      - DB_NAME=${DB_NAME}
+      - MONGO_DB_NAME=${DB_NAME}
+      - REDIS_URI=redis
       - SECRET=${SECRET}
     ports:
       - ${PORT}:${PORT}
     depends_on:
       - mongo
+      - redis
       
   mongo:
     image: mongo
@@ -21,5 +23,13 @@ services:
     volumes:
       - mongodb:/data/db
 
+  redis:
+    image: redis:6.2.7
+    ports: 
+      - 6379:6379
+    volumes:
+      - redisdb:/data 
+
 volumes:
   mongodb:
+  redisdb:

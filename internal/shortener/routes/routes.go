@@ -5,7 +5,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func Router(e echo.Echo) {
+func Router(e *echo.Echo) {
 	e.POST("/", handler.CreateShortUrl)
 	e.GET("/:slug", handler.Redirect)
 	e.GET("/:slug/stats", handler.Stats)

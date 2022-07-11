@@ -7,12 +7,13 @@ import (
 	"github.com/CaioAureliano/gortener/internal/shortener/model"
 	"github.com/CaioAureliano/gortener/internal/shortener/repository/cache"
 	"github.com/go-redis/redis/v8"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type mockRepository struct {
 	fnCreate   func(shortener *model.Shortener) (*model.Shortener, error)
 	fnGet      func(slug string) (*model.Shortener, error)
-	fnUpdate   func(shortener *model.Shortener, id string) (*model.Shortener, error)
+	fnUpdate   func(shortener *model.Shortener, id primitive.ObjectID) (*model.Shortener, error)
 	fnAddClick func(click model.Click, id string) (*model.Shortener, error)
 }
 
@@ -30,7 +31,7 @@ func (m mockRepository) Get(slug string) (*model.Shortener, error) {
 	return m.fnGet(slug)
 }
 
-func (m mockRepository) Update(shortener *model.Shortener, id string) (*model.Shortener, error) {
+func (m mockRepository) Update(shortener *model.Shortener, id primitive.ObjectID) (*model.Shortener, error) {
 	if m.fnUpdate == nil {
 		return nil, nil
 	}

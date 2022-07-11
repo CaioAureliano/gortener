@@ -11,6 +11,7 @@ import (
 	"github.com/CaioAureliano/gortener/internal/shortener/repository/cache"
 	"github.com/go-redis/redismock/v8"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func TestCreate(t *testing.T) {
@@ -241,7 +242,7 @@ func TestAddClick(t *testing.T) {
 				fnGet: func(slug string) (*model.Shortener, error) {
 					return &model.Shortener{Slug: slugMock}, nil
 				},
-				fnUpdate: func(shortener *model.Shortener, id string) (*model.Shortener, error) {
+				fnUpdate: func(shortener *model.Shortener, id primitive.ObjectID) (*model.Shortener, error) {
 					return shortener, nil
 				},
 			}

@@ -6,10 +6,9 @@ services:
     build: .
     environment:
       - PORT=${PORT}
-      - MONGO_URI=mongodb://mongo:27017
       - MONGO_DB_NAME=${DB_NAME}
-      - REDIS_URI=redis
-      - SECRET=${SECRET}
+      - MONGO_URI=mongodb://mongo:27017
+      - REDIS_URI=redis:6379
     ports:
       - ${PORT}:${PORT}
     depends_on:

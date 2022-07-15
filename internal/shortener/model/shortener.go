@@ -7,7 +7,7 @@ import (
 )
 
 type Shortener struct {
-	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id"`
+	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	Url       string             `json:"url,omitempty" bson:"url"`
 	Slug      string             `json:"slug,omitempty" bson:"slug"`
 	Click     []Click            `json:"clicks,omitempty" bson:"clicks"`

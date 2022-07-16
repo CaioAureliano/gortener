@@ -65,7 +65,10 @@ func (s shortener) Get(slug string) (*model.Shortener, error) {
 }
 
 func (s shortener) Update(shortener *model.Shortener, id primitive.ObjectID) (*model.Shortener, error) {
-	_, err := s.coll.UpdateByID(s.ctx, id, shortener)
+	_, err := s.coll.UpdateByID(s.ctx, id, bson.M{"$set": bson.M{
+		"clicks": shortener.Click,
+	}})
+
 	if err != nil {
 		log.Printf("error to update short url: %s", err.Error())
 		return nil, err

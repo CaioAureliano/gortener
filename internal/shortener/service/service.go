@@ -12,6 +12,7 @@ import (
 	"github.com/CaioAureliano/gortener/internal/shortener/repository/cache"
 	"github.com/go-redis/redis/v8"
 	"github.com/snapcore/snapd/randutil"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Shortener interface {
@@ -110,8 +111,10 @@ func (s *shortener) AddClick(click model.Click, slug string) (*model.Shortener, 
 		return nil, err
 	}
 
-	clicks := shortener.Click
-	clicks = append(clicks, click)
+	click.ID = primitive.NewObjectID()
+	click.CreatedAt = time.Now()
+
+	clicks := append(shortener.Click, click)
 	shortener.Click = clicks
 
 	updated, err := shortenerRepository().Update(shortener, shortener.ID)

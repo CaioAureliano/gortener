@@ -16,7 +16,7 @@ type Shortener interface {
 	Create(shortener *model.Shortener) (*model.Shortener, error)
 	Get(slug string) (*model.Shortener, error)
 	Update(shortener *model.Shortener, id primitive.ObjectID) (*model.Shortener, error)
-	AddClick(click model.Click, slug string) (*model.Shortener, error)
+	AddClick(clicks []model.Click, id primitive.ObjectID) error
 }
 
 type shortener struct {
@@ -65,18 +65,17 @@ func (s shortener) Get(slug string) (*model.Shortener, error) {
 }
 
 func (s shortener) Update(shortener *model.Shortener, id primitive.ObjectID) (*model.Shortener, error) {
+	return nil, nil
+}
+
+func (s shortener) AddClick(clicks []model.Click, id primitive.ObjectID) error {
 	_, err := s.coll.UpdateByID(s.ctx, id, bson.M{"$set": bson.M{
-		"clicks": shortener.Click,
+		"clicks": clicks,
 	}})
 
 	if err != nil {
-		log.Printf("error to update short url: %s", err.Error())
-		return nil, err
+		log.Printf("error to update short url with click: %s", err.Error())
 	}
 
-	return s.Get(shortener.Slug)
-}
-
-func (s shortener) AddClick(click model.Click, slug string) (*model.Shortener, error) {
-	return nil, nil
+	return nil
 }

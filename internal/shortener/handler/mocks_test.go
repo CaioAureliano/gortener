@@ -13,7 +13,7 @@ type mockService struct {
 	fnCreate   func(req *dto.UrlRequest) (*model.Shortener, error)
 	fnGet      func(slug string) (*model.Shortener, error)
 	fnGetUrl   func(slug string) (string, error)
-	fnAddClick func(click model.Click, slug string) (*model.Shortener, error)
+	fnAddClick func(click model.Click, slug string) error
 	fnStats    func(slug string) (*model.Stats, error)
 }
 
@@ -38,11 +38,11 @@ func (m mockService) GetUrl(slug string) (string, error) {
 	return "", nil
 }
 
-func (m mockService) AddClick(click model.Click, slug string) (*model.Shortener, error) {
+func (m mockService) AddClick(click model.Click, slug string) error {
 	if m.fnAddClick != nil {
 		return m.fnAddClick(click, slug)
 	}
-	return nil, nil
+	return nil
 }
 
 func (m mockService) Stats(slug string) (*model.Stats, error) {

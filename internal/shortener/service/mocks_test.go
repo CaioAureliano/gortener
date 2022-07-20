@@ -14,7 +14,7 @@ type mockRepository struct {
 	fnCreate   func(shortener *model.Shortener) (*model.Shortener, error)
 	fnGet      func(slug string) (*model.Shortener, error)
 	fnUpdate   func(shortener *model.Shortener, id primitive.ObjectID) (*model.Shortener, error)
-	fnAddClick func(click model.Click, id string) (*model.Shortener, error)
+	fnAddClick func(clicks []model.Click, id primitive.ObjectID) error
 }
 
 func (m mockRepository) Create(shortener *model.Shortener) (*model.Shortener, error) {
@@ -38,11 +38,11 @@ func (m mockRepository) Update(shortener *model.Shortener, id primitive.ObjectID
 	return m.fnUpdate(shortener, id)
 }
 
-func (m mockRepository) AddClick(click model.Click, slug string) (*model.Shortener, error) {
+func (m mockRepository) AddClick(clicks []model.Click, slug primitive.ObjectID) error {
 	if m.fnAddClick == nil {
-		return nil, nil
+		return nil
 	}
-	return m.fnAddClick(click, slug)
+	return m.fnAddClick(clicks, slug)
 }
 
 type mockCache struct {

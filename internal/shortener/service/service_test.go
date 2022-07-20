@@ -230,29 +230,38 @@ func TestAddClick(t *testing.T) {
 			System:   "linux",
 		}
 
-		wantShortener := &model.Shortener{
-			Slug: slugMock,
-			Click: []model.Click{
-				clickMock,
-			},
-		}
+		var stubClicks []model.Click
 
 		shortenerRepository = func() repository.Shortener {
 			return mockRepository{
 				fnGet: func(slug string) (*model.Shortener, error) {
-					return &model.Shortener{Slug: slugMock}, nil
+					return &model.Shortener{
+						Slug: slugMock,
+						Click: []model.Click{
+							{
+								ID:      primitive.NewObjectID(),
+								Browser: "firefox",
+							},
+						},
+					}, nil
 				},
-				fnUpdate: func(shortener *model.Shortener, id primitive.ObjectID) (*model.Shortener, error) {
-					return shortener, nil
+				fnAddClick: func(clicks []model.Click, id primitive.ObjectID) error {
+					stubClicks = clicks
+					return nil
 				},
 			}
 		}
 
 		shortenerService := New()
-		gotShortener, err := shortenerService.AddClick(clickMock, slugMock)
+		err := shortenerService.AddClick(clickMock, slugMock)
 
 		assert.NoError(t, err)
-		assert.Equal(t, wantShortener, gotShortener)
+		assert.Equal(t, 2, len(stubClicks))
+		assert.Equal(t, clickMock.Source, stubClicks[1].Source)
+		assert.Equal(t, clickMock.Device, stubClicks[1].Device)
+		assert.Equal(t, clickMock.Browser, stubClicks[1].Browser)
+		assert.Equal(t, clickMock.Language, stubClicks[1].Language)
+		assert.Equal(t, clickMock.System, stubClicks[1].System)
 	})
 }
 

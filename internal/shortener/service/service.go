@@ -19,7 +19,7 @@ type Shortener interface {
 	Create(url *dto.UrlRequest) (*model.Shortener, error)
 	Get(slug string) (*model.Shortener, error)
 	GetUrl(slug string) (string, error)
-	AddClick(click model.Click, slug string) (*model.Shortener, error)
+	AddClick(click model.Click, slug string) error
 	Stats(slug string) (*model.Stats, error)
 }
 
@@ -79,7 +79,7 @@ func (s *shortener) Get(slug string) (*model.Shortener, error) {
 	}
 
 	res, err := shortenerRepository().Get(slug)
-	if err != nil {
+	if err != nil || res == nil {
 		log.Printf("shortener not found with slug %s - error: %s", slug, err.Error())
 		return nil, ErrShortenerNotFound
 	}
@@ -105,25 +105,24 @@ func (s *shortener) GetUrl(slug string) (string, error) {
 	return res, nil
 }
 
-func (s *shortener) AddClick(click model.Click, slug string) (*model.Shortener, error) {
+func (s *shortener) AddClick(click model.Click, slug string) error {
 	shortener, err := s.Get(slug)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	click.ID = primitive.NewObjectID()
 	click.CreatedAt = time.Now()
 
 	clicks := append(shortener.Click, click)
-	shortener.Click = clicks
 
-	updated, err := shortenerRepository().Update(shortener, shortener.ID)
+	err = shortenerRepository().AddClick(clicks, shortener.ID)
 	if err != nil {
-		log.Printf("error to update shortener: %v with click: %v", shortener, click)
-		return nil, errors.New("error to update shortener with click")
+		log.Printf("error to update shortener: %v with click: %v [error: %s]", shortener, click, err.Error())
+		return errors.New("error to update shortener with click")
 	}
 
-	return updated, nil
+	return nil
 }
 
 func (s *shortener) Stats(slug string) (*model.Stats, error) {

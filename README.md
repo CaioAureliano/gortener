@@ -18,8 +18,7 @@ Rename/Copy `.env.example` to `.env`
 | Variable | Description |
 | -------- | ----------- |
 | `PORT` | tcp port to expose from API |
-| `DB_NAME` | database name from application |
-| `SECRET` | used to signed jwt |
+| `MONGO_DB_NAME` | database name from application |
 
 ### Run
 _and build_

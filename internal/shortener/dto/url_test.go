@@ -39,3 +39,32 @@ func TestIsValid(t *testing.T) {
 		})
 	}
 }
+
+func TestAppendProtocolIfNotExists(t *testing.T) {
+
+	tests := []struct {
+		name    string
+		gotUrl  string
+		wantUrl string
+	}{
+		{
+			name:    "should be return url with http protocol",
+			gotUrl:  "example.com",
+			wantUrl: "http://example.com",
+		},
+		{
+			name:    "should be return same url already with http",
+			gotUrl:  "http://www.example.com",
+			wantUrl: "http://www.example.com",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := UrlRequest{Url: tt.gotUrl}
+			req.AppendProtocolIfNotExists()
+
+			assert.Equal(t, tt.wantUrl, req.Url)
+		})
+	}
+}

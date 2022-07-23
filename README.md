@@ -1,5 +1,13 @@
 # gortener
 a URL Shortener api with Go
+
+## About
+Rest api allow the user to shorten a url and view the stats.
+
+#### Techs
+ - Golang `1.17.8`
+ - MongoDB  `5.0.8`
+ - Redis `6.2.7`
  
 ## Setup
 Project need a docker(and docker-compose) to initialize
